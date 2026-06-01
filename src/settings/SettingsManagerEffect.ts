@@ -30,19 +30,26 @@ export const flush = (
   settingsManager: SettingsManagerLike | SettingsManager,
 ): Effect.Effect<void, SettingsManagerFlushError> =>
   Effect.tryPromise({
-    try: async () => {
-      await settingsManager.flush();
-      const errors = settingsManager.drainErrors();
-      if (errors.length > 0) {
-        throw new SettingsManagerPersistenceError({
-          message: `PI settings persistence failed: ${formatSettingsErrors(errors)}`,
-          cause: errors,
-        });
-      }
-    },
-    catch: (cause) =>
-      cause instanceof SettingsManagerPersistenceError ? cause : new SettingsManagerPersistenceError({ cause }),
-  });
+    try: () => settingsManager.flush(),
+    catch: (cause) => new SettingsManagerPersistenceError({ cause }),
+  }).pipe(
+    Effect.flatMap(() =>
+      Effect.try({
+        try: () => settingsManager.drainErrors(),
+        catch: (cause) => new SettingsManagerPersistenceError({ cause }),
+      }),
+    ),
+    Effect.flatMap((errors) =>
+      errors.length === 0
+        ? Effect.void
+        : Effect.fail(
+            new SettingsManagerPersistenceError({
+              message: `PI settings persistence failed: ${formatSettingsErrors(errors)}`,
+              cause: errors,
+            }),
+          ),
+    ),
+  );
 
 /** Effect wrapper around PI SDK `SettingsManager.drainErrors()` without failing on recorded errors. */
 export const drainErrors = (

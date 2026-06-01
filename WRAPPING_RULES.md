@@ -39,6 +39,7 @@ Rules:
 
 - Preserve the original PI, Effect, or user-code error as `cause` when wrapping.
 - Prefer conservative typed errors over broad, brittle classification.
+- Define wrapper-owned typed errors with `Data.TaggedError(...)` so failures stay idiomatic Effect errors with stable `_tag`, `message`, and preserved `cause` fields.
 - Keep unknown fallback errors for unrecognized failures.
 - Do not classify by private PI message text unless a compatibility test pins the public behavior that requires it.
 - Do not erase details just to make the API look cleaner; stable top-level errors and rich causes should coexist.

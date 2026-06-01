@@ -29,19 +29,20 @@ export const find = (
   modelId: string,
 ): Effect.Effect<ModelRegistryModel, ModelRegistryLookupError> =>
   Effect.try({
-    try: () => {
-      const model = modelRegistry.find(provider, modelId);
-      if (!model) {
-        throw new ModelRegistryModelNotFoundError({
-          message: `PI model not found: ${provider}/${modelId}`,
-          cause: { provider, modelId },
-        });
-      }
-      return model;
-    },
-    catch: (cause) =>
-      cause instanceof ModelRegistryModelNotFoundError ? cause : normalizeUnknownPiSdkError(cause),
-  });
+    try: () => modelRegistry.find(provider, modelId),
+    catch: normalizeUnknownPiSdkError,
+  }).pipe(
+    Effect.flatMap((model) =>
+      model === undefined
+        ? Effect.fail(
+            new ModelRegistryModelNotFoundError({
+              message: `PI model not found: ${provider}/${modelId}`,
+              cause: { provider, modelId },
+            }),
+          )
+        : Effect.succeed(model),
+    ),
+  );
 
 /** Effect helpers grouped by the original PI SDK `ModelRegistry` concept. */
 export const ModelRegistryEffect = {

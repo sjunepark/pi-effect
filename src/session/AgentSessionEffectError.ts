@@ -1,8 +1,15 @@
+import { Data } from "effect";
+
 const messageFromCause = (cause: unknown, fallback: string): string => {
   if (cause instanceof Error && cause.message.length > 0) return cause.message;
   if (typeof cause === "string" && cause.length > 0) return cause;
   return fallback;
 };
+
+interface PiSdkEffectErrorData {
+  readonly message: string;
+  readonly cause: unknown;
+}
 
 /** Options shared by pi-effect errors that normalize PI SDK or Effect boundary failures. */
 export interface PiSdkEffectErrorOptions {
@@ -11,98 +18,94 @@ export interface PiSdkEffectErrorOptions {
 }
 
 /** Fallback for unexpected failures crossing a PI SDK Effect wrapper boundary. */
-export class UnknownPiSdkError extends Error {
-  readonly _tag = "UnknownPiSdkError" as const;
-  override readonly cause: unknown;
-
+export class UnknownPiSdkError extends Data.TaggedError("UnknownPiSdkError")<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "Unknown PI SDK error"));
-    this.name = "UnknownPiSdkError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "Unknown PI SDK error"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised when the Effect wrapper around PI SDK `createAgentSession(...)` cannot create a session. */
-export class CreateAgentSessionError extends Error {
-  readonly _tag = "CreateAgentSessionError" as const;
-  override readonly cause: unknown;
-
+export class CreateAgentSessionError extends Data.TaggedError(
+  "CreateAgentSessionError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "Failed to create PI session"));
-    this.name = "CreateAgentSessionError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "Failed to create PI session"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised when PI SDK `AgentSession.prompt(...)` rejects after execution starts. */
-export class AgentSessionPromptError extends Error {
-  readonly _tag = "AgentSessionPromptError" as const;
-  override readonly cause: unknown;
-
+export class AgentSessionPromptError extends Data.TaggedError(
+  "AgentSessionPromptError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI prompt failed"));
-    this.name = "AgentSessionPromptError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI prompt failed"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised when PI SDK prompt preflight rejects before provider execution. */
-export class AgentSessionPromptRejectedError extends Error {
-  readonly _tag = "AgentSessionPromptRejectedError" as const;
-  override readonly cause: unknown;
-
+export class AgentSessionPromptRejectedError extends Data.TaggedError(
+  "AgentSessionPromptRejectedError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI prompt was rejected before execution"));
-    this.name = "AgentSessionPromptRejectedError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI prompt was rejected before execution"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised while converting `AgentSession.subscribe(...)` events into an Effect Stream. */
-export class AgentSessionEventStreamError extends Error {
-  readonly _tag = "AgentSessionEventStreamError" as const;
-  override readonly cause: unknown;
-
+export class AgentSessionEventStreamError extends Data.TaggedError(
+  "AgentSessionEventStreamError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI session event stream failed"));
-    this.name = "AgentSessionEventStreamError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI session event stream failed"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised when `ModelRegistryEffect.find(...)` cannot find the requested PI model. */
-export class ModelRegistryModelNotFoundError extends Error {
-  readonly _tag = "ModelRegistryModelNotFoundError" as const;
-  override readonly cause: unknown;
-
+export class ModelRegistryModelNotFoundError extends Data.TaggedError(
+  "ModelRegistryModelNotFoundError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI model was not found"));
-    this.name = "ModelRegistryModelNotFoundError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI model was not found"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Reserved typed auth boundary for future Effect wrappers around PI SDK AuthStorage behavior. */
-export class AuthStorageEffectError extends Error {
-  readonly _tag = "AuthStorageEffectError" as const;
-  override readonly cause: unknown;
-
+export class AuthStorageEffectError extends Data.TaggedError("AuthStorageEffectError")<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI authentication failed"));
-    this.name = "AuthStorageEffectError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI authentication failed"),
+      cause: options.cause,
+    });
   }
 }
 
 /** Failure raised when PI SDK `SettingsManager.flush()` or recorded persistence errors fail durability. */
-export class SettingsManagerPersistenceError extends Error {
-  readonly _tag = "SettingsManagerPersistenceError" as const;
-  override readonly cause: unknown;
-
+export class SettingsManagerPersistenceError extends Data.TaggedError(
+  "SettingsManagerPersistenceError",
+)<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI settings persistence failed"));
-    this.name = "SettingsManagerPersistenceError";
-    this.cause = options.cause;
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI settings persistence failed"),
+      cause: options.cause,
+    });
   }
 }
 
@@ -120,7 +123,9 @@ export type PiSdkEffectError =
 export const normalizeCreateAgentSessionError = (cause: unknown): CreateAgentSessionError =>
   cause instanceof CreateAgentSessionError ? cause : new CreateAgentSessionError({ cause });
 
-export const normalizeAgentSessionPromptError = (cause: unknown): AgentSessionPromptError | AgentSessionPromptRejectedError => {
+export const normalizeAgentSessionPromptError = (
+  cause: unknown,
+): AgentSessionPromptError | AgentSessionPromptRejectedError => {
   if (cause instanceof AgentSessionPromptError || cause instanceof AgentSessionPromptRejectedError) {
     return cause;
   }
