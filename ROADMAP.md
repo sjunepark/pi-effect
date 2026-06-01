@@ -20,9 +20,10 @@ Implemented wrappers:
 Implemented validation:
 
 - unit tests for session release, prompt success, prompt interruption, event stream cleanup, and tool success/failure behavior
-- compatibility tests documenting the pinned PI SDK version, public SDK session acquisition, and `defineTool` execution shape
+- compatibility tests documenting the pinned PI SDK version, adapter-relevant root exports, public SDK session acquisition, the real `AgentSession` members used by the wrapper, deterministic event forwarding through `PiEventStream`, `PiTool.make` registration as a custom PI tool, `defineTool` execution shape, and public `SettingsManager` write-error draining
+- a packaging sentinel documenting that `@earendil-works/pi-coding-agent/hooks` is advertised by `0.78.0` but not importable, so it remains outside the supported adapter surface
 
-Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, real PI event ordering, settings persistence failures from file-backed storage, and model lookup error normalization.
+Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, file-backed settings persistence failures using temporary directories, model lookup error normalization, and opt-in real-model integration tests.
 
 ## Core decision
 
@@ -41,7 +42,7 @@ They are important PI internals/building blocks, but starting with them would en
 
 The wrapper must track PI SDK behavior with tests. This is essential because PI will keep changing and this package should be updated alongside it.
 
-Every public wrapper API should have compatibility tests proving how it maps to the current pinned PI version. Prefer tests against the public `@earendil-works/pi-coding-agent` API over assumptions from private internals.
+Do not try to make this repository an exhaustive PI SDK test suite. Keep compatibility coverage deep for the `pi-effect` contract and shallow for broader SDK packaging/import sentinels. Every public wrapper API should have compatibility tests proving how it maps to the current pinned PI version. Prefer tests against the public `@earendil-works/pi-coding-agent` API over assumptions from private internals.
 
 Compatibility tests should cover at least:
 
@@ -245,4 +246,4 @@ Creo workflow orchestration
 
 ## Next developer task
 
-Deepen the compatibility suite before adding broad wrappers. Prioritize prompt preflight rejection behavior, event subscription ordering on a real `AgentSession`, file-backed settings persistence failures, and stable model lookup failures. Keep model/auth/resource-loader wrappers deferred until a downstream app has repeated real usage.
+Deepen the remaining adapter-scope compatibility suite before adding broad wrappers. Prioritize prompt preflight rejection behavior, file-backed settings persistence failures with temporary directories, stable model lookup failures, and an opt-in real-model integration script. Keep model/auth/resource-loader wrappers deferred until a downstream app has repeated real usage.

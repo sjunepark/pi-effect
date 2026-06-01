@@ -11,6 +11,14 @@ import { Effect } from "effect";
 import { Type } from "typebox";
 import { PiSessionService } from "../../src/index.js";
 
+const adapterRuntimeExports = [
+  "VERSION",
+  "createAgentSession",
+  "defineTool",
+  "SessionManager",
+  "SettingsManager",
+] as const;
+
 describe("pi-coding-agent 0.78 public SDK compatibility", () => {
   it("documents the pinned PI SDK version under test", () => {
     const packageJson = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
@@ -19,6 +27,28 @@ describe("pi-coding-agent 0.78 public SDK compatibility", () => {
 
     expect(packageJson.dependencies["@earendil-works/pi-coding-agent"]).toBe("0.78.0");
     expect(VERSION).toBe("0.78.0");
+  });
+
+  it("keeps the adapter-relevant root SDK exports importable", async () => {
+    const sdk = await import("@earendil-works/pi-coding-agent");
+
+    for (const exportName of adapterRuntimeExports) {
+      expect(sdk[exportName]).toBeDefined();
+    }
+  });
+
+  it("documents the currently advertised hooks subpath as outside the supported adapter surface", async () => {
+    const piPackageJson = JSON.parse(
+      readFileSync(
+        new URL("../../node_modules/@earendil-works/pi-coding-agent/package.json", import.meta.url),
+        "utf8",
+      ),
+    ) as { exports?: Record<string, unknown> };
+
+    const hooksSubpath = "@earendil-works/pi-coding-agent/hooks";
+
+    expect(piPackageJson.exports).toHaveProperty("./hooks");
+    await expect(import(hooksSubpath)).rejects.toThrow(/Cannot find (module|package)/);
   });
 
   it("acquires and releases a public SDK session through the scoped wrapper", async () => {

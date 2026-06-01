@@ -17,11 +17,12 @@ Implemented:
 - settings `flush()` / `drainErrors()` helper that fails on recorded persistence errors
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
-- compatibility tests for the pinned public PI SDK surface
+- compatibility tests for the pinned adapter-relevant PI SDK surface
 
 Not implemented yet:
 
 - model/auth/resource-loader helpers
+- broader PI SDK wrappers outside the current adapter contract
 - deeper PI error classification beyond conservative wrapper errors
 - real-model integration tests
 
@@ -82,5 +83,18 @@ bun run typecheck
 bun run test
 bun run build
 ```
+
+## Compatibility strategy
+
+`pi-effect` does not try to exhaustively test or wrap the full PI SDK. The default suite is deep for the adapter contract and shallow for broader SDK packaging signals.
+
+Currently supported PI surface:
+
+- `createAgentSession(...)` and the `AgentSession` members used here: `sessionId`, `prompt`, `abort`, `subscribe`, `dispose`, and custom tool lookup
+- `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
+- `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
+- public session events consumed through `AgentSession.subscribe(...)`
+
+Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 
 The compatibility suite should remain focused on public `@earendil-works/pi-coding-agent` behavior. Avoid depending on PI private internals unless a test pins the public behavior that motivated the wrapper contract.
