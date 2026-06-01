@@ -8,6 +8,7 @@ import {
   ModelRegistry,
   SessionManager,
   SettingsManager,
+  VERSION,
   createAgentSession,
   createBashToolDefinition,
   createEditToolDefinition,
@@ -72,6 +73,7 @@ describe("Creo pi-effect API surface compatibility", () => {
     const entries: SessionEntry[] = SessionManager.inMemory().getEntries();
     const settingsManager = SettingsManager.inMemory({ compaction: { enabled: false } });
 
+    expect(VERSION).toBe("0.78.0");
     expect(entries).toEqual([]);
     expect(settingsManager.getCompactionEnabled()).toBe(false);
   });

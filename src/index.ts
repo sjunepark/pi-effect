@@ -4,6 +4,7 @@ export {
   ModelRegistry,
   SessionManager,
   SettingsManager,
+  VERSION,
   createAgentSession,
   createBashToolDefinition,
   createEditToolDefinition,
