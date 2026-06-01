@@ -1,13 +1,12 @@
 import { Effect } from "effect";
 import type { PiPromptOptions, PiSessionLike } from "./PiSession.js";
-import {
-  PiPromptError,
-  PiPromptRejectedError,
-  PiSessionAbortedError,
-  normalizePromptError,
-} from "./PiSessionError.js";
+import { PiPromptError, PiPromptRejectedError, normalizePromptError } from "./PiSessionError.js";
 
-export type PiPromptFailure = PiPromptError | PiPromptRejectedError | PiSessionAbortedError;
+// This is the Effect error channel for completed prompt attempts. Fiber
+// interruption remains normal Effect interruption; on interruption `run` calls
+// `session.abort()` for cleanup instead of converting the interrupt into a
+// typed failure and losing cancellation semantics.
+export type PiPromptFailure = PiPromptError | PiPromptRejectedError;
 
 const withPreflightRejectionTracking = (
   options: PiPromptOptions | undefined,

@@ -5,9 +5,10 @@ import {
   type ExtensionContext,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import { Effect, Either } from "effect";
+import { Effect } from "effect";
 import type { Static, TSchema } from "typebox";
-import { PiToolDefectError, PiToolExecutionError } from "./PiToolError.js";
+import { runEffectAsPromise } from "../effect/EffectPromiseBoundary.js";
+import { PiToolDefectError, PiToolExecutionError, PiToolInterruptedError } from "./PiToolError.js";
 
 export interface PiToolHandlerContext<TParams extends TSchema, TDetails> {
   readonly toolCallId: string;
@@ -31,6 +32,8 @@ export type PiToolConfig<TParams extends TSchema, TDetails, TState = unknown> = 
  *
  * Handler failures are rejected as `PiToolExecutionError`; PI's agent loop then
  * turns that rejection into an error tool-result message and `isError: true`.
+ * Abort-signal interruption is classified separately while preserving Effect's
+ * original `FiberFailure` as the error cause for low-level diagnostics.
  */
 export const make = <TParams extends TSchema, TDetails = unknown, TState = unknown, E = never>(
   config: PiToolConfig<TParams, TDetails, TState>,
@@ -39,14 +42,12 @@ export const make = <TParams extends TSchema, TDetails = unknown, TState = unkno
   defineTool<TParams, TDetails, TState>({
     ...config,
     execute: (toolCallId, params, signal, onUpdate, piContext) => {
-      const effect = Effect.suspend(() => handler({ toolCallId, params, signal, onUpdate, piContext })).pipe(
-        Effect.mapError((cause) => new PiToolExecutionError({ cause })),
-        Effect.catchAllDefect((cause) => Effect.fail(new PiToolDefectError({ cause }))),
-        Effect.either,
-      );
-      return Effect.runPromise(effect, { signal }).then((result) => {
-        if (Either.isLeft(result)) throw result.left;
-        return result.right;
+      const effect = Effect.suspend(() => handler({ toolCallId, params, signal, onUpdate, piContext }));
+      return runEffectAsPromise(effect, {
+        signal,
+        mapError: (cause) => new PiToolExecutionError({ cause }),
+        mapDefect: (cause) => new PiToolDefectError({ cause }),
+        mapInterrupted: (cause) => new PiToolInterruptedError({ cause }),
       });
     },
   });

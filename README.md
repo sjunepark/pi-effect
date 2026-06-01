@@ -18,6 +18,7 @@ Implemented:
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
+- a Creo import-surface sentinel covering the PI SDK exports Creo currently uses directly
 
 Not implemented yet:
 
@@ -41,6 +42,8 @@ const program = Effect.scoped(
 
 await Effect.runPromise(program);
 ```
+
+`PiPrompt.run` is Effect-native: fiber interruption remains Effect interruption, and the wrapper uses `Effect.onInterrupt` to call `session.abort()` for PI cleanup.
 
 ### Event streams
 
@@ -73,7 +76,7 @@ const echoTool = PiTool.make(
 );
 ```
 
-Effect failures from tool handlers are rejected as `PiToolExecutionError`; PI's agent loop converts rejected tool executions into error tool-result messages.
+Effect failures from tool handlers are rejected as `PiToolExecutionError`; defects are rejected as `PiToolDefectError`; abort-signal interruption is rejected as `PiToolInterruptedError` with the original Effect `FiberFailure` preserved as `cause`. PI's agent loop converts rejected tool executions into error tool-result messages.
 
 ## Development
 
@@ -86,14 +89,16 @@ bun run build
 
 ## Compatibility strategy
 
-`pi-effect` does not try to exhaustively test or wrap the full PI SDK. The default suite is deep for the adapter contract and shallow for broader SDK packaging signals.
+`pi-effect` does not try to exhaustively test or wrap the full PI SDK. The default suite is deep for the adapter contract and shallow for broader SDK packaging signals. Wrapper expansion rules live in [`WRAPPING_RULES.md`](./WRAPPING_RULES.md).
 
-Currently supported PI surface:
+Currently supported adapter surface:
 
 - `createAgentSession(...)` and the `AgentSession` members used here: `sessionId`, `prompt`, `abort`, `subscribe`, `dispose`, and custom tool lookup
 - `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
 - `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
 - public session events consumed through `AgentSession.subscribe(...)`
+
+The suite also has a shallow Creo import-surface sentinel for direct SDK use that is not fully wrapped by `pi-effect` yet: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
 Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 

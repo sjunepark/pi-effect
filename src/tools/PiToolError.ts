@@ -31,4 +31,15 @@ export class PiToolDefectError extends Error {
   }
 }
 
-export type PiToolError = PiToolExecutionError | PiToolDefectError;
+export class PiToolInterruptedError extends Error {
+  readonly _tag = "PiToolInterruptedError" as const;
+  override readonly cause: unknown;
+
+  constructor(options: PiToolErrorOptions = {}) {
+    super(options.message ?? errorMessage(options.cause, "PI tool execution was interrupted"));
+    this.name = "PiToolInterruptedError";
+    this.cause = options.cause;
+  }
+}
+
+export type PiToolError = PiToolExecutionError | PiToolDefectError | PiToolInterruptedError;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { Effect } from "effect";
+import { Cause, Effect, Runtime } from "effect";
 import { Type } from "typebox";
-import { PiTool, PiToolDefectError, PiToolExecutionError } from "../../src/index.js";
+import { PiTool, PiToolDefectError, PiToolExecutionError, PiToolInterruptedError } from "../../src/index.js";
 
 describe("PiTool", () => {
   it("converts Effect successes into PI tool results", async () => {
@@ -77,5 +77,30 @@ describe("PiTool", () => {
       _tag: "PiToolDefectError",
       cause,
     } satisfies Partial<PiToolDefectError>);
+  });
+
+  it("preserves Effect interruption details inside typed tool interruption errors", async () => {
+    const tool = PiTool.make(
+      {
+        name: "interrupt",
+        label: "Interrupt",
+        description: "Runs until interrupted",
+        parameters: Type.Object({}),
+      },
+      () => Effect.never,
+    );
+    const controller = new AbortController();
+    const execution = tool.execute("call-1", {}, controller.signal, undefined, {} as never);
+
+    controller.abort();
+
+    await expect(execution).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(PiToolInterruptedError);
+      expect(error).toMatchObject({ _tag: "PiToolInterruptedError" } satisfies Partial<PiToolInterruptedError>);
+      const cause = (error as PiToolInterruptedError).cause;
+      expect(Runtime.isFiberFailure(cause)).toBe(true);
+      expect(Runtime.isFiberFailure(cause) && Cause.isInterruptedOnly(cause[Runtime.FiberFailureCauseId])).toBe(true);
+      return true;
+    });
   });
 });

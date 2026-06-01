@@ -2,7 +2,7 @@
 
 `pi-effect` is a planned Effect-native adapter around the public PI SDK. It should let apps use PI through typed Effect services, scoped lifecycles, interruption-aware prompts, event streams, typed error normalization, and reusable test fixtures without copying adapter code into every project.
 
-This document is the starting point for implementation and upgrade sessions.
+This document is the starting point for implementation and upgrade sessions. Use [`WRAPPING_RULES.md`](./WRAPPING_RULES.md) for durable adapter-design rules when expanding the wrapped PI SDK surface.
 
 ## Current implementation status
 
@@ -19,17 +19,18 @@ Implemented wrappers:
 
 Implemented validation:
 
-- unit tests for session release, prompt success, prompt interruption, event stream cleanup, and tool success/failure behavior
+- unit tests for session release, prompt success, prompt interruption, event stream cleanup, tool success/failure behavior, and tool abort-signal interruption preserving the original Effect cause
 - compatibility tests documenting the pinned PI SDK version, adapter-relevant root exports, public SDK session acquisition, the real `AgentSession` members used by the wrapper, deterministic event forwarding through `PiEventStream`, `PiTool.make` registration as a custom PI tool, `defineTool` execution shape, and public `SettingsManager` write-error draining
+- a Creo import-surface sentinel covering the direct PI SDK symbols used by `../creo`: auth storage/backends, model and session managers, resource loaders, session creation options, built-in tool-definition factories, operation interfaces, and tool/session result types
 - a packaging sentinel documenting that `@earendil-works/pi-coding-agent/hooks` is advertised by `0.78.0` but not importable, so it remains outside the supported adapter surface
 
-Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, file-backed settings persistence failures using temporary directories, model lookup error normalization, and opt-in real-model integration tests.
+Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, file-backed settings persistence failures using temporary directories, model lookup error normalization, Effect-native wrappers for the Creo-used auth/model/resource-loader surface, and opt-in real-model integration tests.
 
 ## Core decision
 
 Wrap `@earendil-works/pi-coding-agent` first.
 
-Creo currently imports PI through `@earendil-works/pi-coding-agent`, and that package exposes the SDK surface we need: `createAgentSession`, `SessionManager`, `ModelRegistry`, `AuthStorage`, `SettingsManager`, `ResourceLoader`, `defineTool`, session events, prompts, aborts, and session disposal.
+Creo currently imports PI through `@earendil-works/pi-coding-agent`, and that package exposes the SDK surface we need: `createAgentSession`, `SessionManager`, `ModelRegistry`, `AuthStorage`, `AuthStorageBackend`, `SettingsManager`, `ResourceLoader`, `createExtensionRuntime`, `defineTool`, built-in tool-definition factories and operation interfaces, session events, session entries, prompts, aborts, and session disposal.
 
 Do **not** directly wrap these packages in the first version unless a public `pi-coding-agent` API forces it:
 
@@ -153,10 +154,11 @@ Initial candidates:
 - `PiSessionCreateError`
 - `PiPromptError`
 - `PiPromptRejectedError`
-- `PiSessionAbortedError`
 - `PiModelNotFoundError`
 - `PiAuthError`
 - `PiToolExecutionError`
+- `PiToolDefectError`
+- `PiToolInterruptedError`
 - `PiSettingsPersistenceError`
 - `PiUnknownError`
 

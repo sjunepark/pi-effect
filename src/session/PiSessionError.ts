@@ -53,17 +53,6 @@ export class PiPromptRejectedError extends Error {
   }
 }
 
-export class PiSessionAbortedError extends Error {
-  readonly _tag = "PiSessionAbortedError" as const;
-  override readonly cause: unknown;
-
-  constructor(options: PiErrorOptions = {}) {
-    super(options.message ?? messageFromCause(options.cause, "PI session operation was aborted"));
-    this.name = "PiSessionAbortedError";
-    this.cause = options.cause;
-  }
-}
-
 export class PiEventStreamError extends Error {
   readonly _tag = "PiEventStreamError" as const;
   override readonly cause: unknown;
@@ -112,7 +101,6 @@ export type PiSessionError =
   | PiSessionCreateError
   | PiPromptError
   | PiPromptRejectedError
-  | PiSessionAbortedError
   | PiEventStreamError
   | PiModelNotFoundError
   | PiAuthError
@@ -122,8 +110,8 @@ export type PiSessionError =
 export const normalizeSessionCreateError = (cause: unknown): PiSessionCreateError =>
   cause instanceof PiSessionCreateError ? cause : new PiSessionCreateError({ cause });
 
-export const normalizePromptError = (cause: unknown): PiPromptError | PiPromptRejectedError | PiSessionAbortedError => {
-  if (cause instanceof PiPromptError || cause instanceof PiPromptRejectedError || cause instanceof PiSessionAbortedError) {
+export const normalizePromptError = (cause: unknown): PiPromptError | PiPromptRejectedError => {
+  if (cause instanceof PiPromptError || cause instanceof PiPromptRejectedError) {
     return cause;
   }
   return new PiPromptError({ cause });
