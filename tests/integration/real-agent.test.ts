@@ -19,6 +19,7 @@ import {
 const REAL_AGENT_ENABLED = process.env.PI_EFFECT_REAL_AGENT === "1";
 const DEFAULT_PROVIDER = "openai";
 const DEFAULT_MODEL = "gpt-4.1-mini";
+const AGENT_END_EVENT_TIMEOUT = "5 seconds";
 
 const describeRealAgent = REAL_AGENT_ENABLED ? describe : describe.skip;
 
@@ -95,7 +96,14 @@ describeRealAgent("real PI AgentSession smoke", () => {
               "Reply with exactly this string and no extra text: PI_EFFECT_REAL_AGENT_OK",
             );
 
-            const events = Array.from(yield* Fiber.join(eventsFiber));
+            const events = Array.from(
+              yield* Fiber.join(eventsFiber).pipe(
+                Effect.timeoutFail({
+                  duration: AGENT_END_EVENT_TIMEOUT,
+                  onTimeout: () => new Error("Timed out waiting for the real-agent agent_end event"),
+                }),
+              ),
+            );
             return {
               eventTypes: events.map((event) => event.type),
               lastAssistantText: session.getLastAssistantText(),
