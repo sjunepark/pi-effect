@@ -6,6 +6,18 @@ Scratchpad and triage index.
 - Keep P0 and P1 focused on the next compatibility hardening slice for `pi-effect`.
 - Use worktree tags (`[compat]`, `[integration]`, `[evals]`, `[docs]`) so priority stays primary while work can split cleanly.
 - `D/Px` means a decision is needed before the item can be implemented at that priority.
+- Current implemented status and usage live in [`README.md`](./README.md).
+- Durable adapter design rules live in [`WRAPPING_RULES.md`](./WRAPPING_RULES.md).
+
+## Project direction
+
+This section keeps the actionable planning context without duplicating status docs.
+
+- Wrap public `@earendil-works/pi-coding-agent` APIs first. Do not wrap `@earendil-works/pi-agent-core` or `@earendil-works/pi-ai` directly unless a concrete public SDK gap requires it.
+- Compatibility comes before broader API surface. Every supported wrapper behavior should have public-SDK compatibility coverage; import-surface sentinels document availability but do not imply full wrapper support.
+- Keep wrappers shallow, Effect-native, and generic. Creo workflow concepts, app auth policy, run records, Context Store behavior, and UI copy belong downstream.
+- Future expansion order: deepen prompt/settings/model compatibility, then add auth/model/resource-loader helpers only when repeated downstream usage proves the need.
+- Real-model coverage stays opt-in, credential-gated, and outside the default test suite.
 
 ## Priority model
 
@@ -24,13 +36,23 @@ Scratchpad and triage index.
    6. Assert the caller-provided `preflightResult(false)` hook is invoked.
    7. Assert the original PI rejection cause is preserved on the wrapper error when available.
    8. Dispose the real session in `finally` or through `PiSessionService.acquireFrom(...)`.
-2. [compat] Expose the Creo PI API surface through `pi-effect` one area at a time.
+2. [compat] Add file-backed settings persistence failure coverage.
+   1. Use temporary directories or files only.
+   2. Exercise public `SettingsManager` behavior, not private internals.
+   3. Assert `PiSettings.flush(...)` / `drainErrors(...)` surfaces recorded persistence failures as `PiSettingsPersistenceError`.
+   4. Preserve the original SDK error as the wrapper cause.
+3. [compat] Add stable model lookup error normalization.
+   1. Use public `ModelRegistry` behavior from the pinned PI SDK.
+   2. Cover a deterministic missing-model or unavailable-model path.
+   3. Normalize through a typed wrapper error only where callers can act on it.
+   4. Preserve unknown model failures through `PiUnknownError` or the relevant conservative fallback.
+4. [compat] Expose the Creo PI API surface through `pi-effect` one area at a time.
    1. Use `CREO_PI_API_SURFACE.md` as the source checklist.
    2. Start with facade exports for the direct Creo imports, then add Effect-native helpers where they reduce Creo boilerplate.
    3. For each API area, add compatibility tests that import from `pi-effect` only and prove behavior against the pinned PI SDK.
    4. Migrate the matching Creo imports after the `pi-effect` surface is covered.
    5. Keep the pinned PI SDK version unchanged unless the task is explicitly an upgrade.
-3. [integration] Add opt-in real-agent smoke tests that require credentials.
+5. [integration] Add opt-in real-agent smoke tests that require credentials.
    1. Do not run these from default `bun run test`.
    2. Add a dedicated script, for example `bun run test:real-agent`.
    3. Gate the suite with `PI_EFFECT_REAL_AGENT=1`; otherwise skip every test.
@@ -56,7 +78,7 @@ Scratchpad and triage index.
       2. Interrupt the Effect fiber or abort the run promise signal.
       3. Assert `session.abort()` behavior leaves the session idle or emits an aborted/end state.
       4. Avoid brittle text-quality assertions for abort behavior.
-4. [docs] Document the real-agent test workflow.
+6. [docs] Document the real-agent test workflow.
    1. Add README instructions for `bun run test:real-agent`.
    2. Document every supported environment variable.
    3. State that default tests never require credentials.
@@ -65,7 +87,7 @@ Scratchpad and triage index.
       1. API key from provider environment variables such as `OPENAI_API_KEY`.
       2. Existing PI OAuth/subscription credentials through `PI_EFFECT_AGENT_DIR`.
    6. Note expected cost/network behavior and recommend cheap models for local smoke tests.
-5. [evals] Defer full evals unless behavior quality becomes a package goal.
+7. [evals] Defer full evals unless behavior quality becomes a package goal.
    1. Compatibility tests should answer whether `pi-effect` still matches public PI SDK behavior.
    2. Evals should answer whether the agent performs user tasks well.
    3. This package currently needs compatibility and smoke coverage more than behavioral evals.
@@ -85,6 +107,12 @@ Scratchpad and triage index.
 
 ## P1 — compatibility quality bar
 
+- [compat] Add file-backed settings persistence failure coverage.
+  - Use temporary directories or files to avoid touching user PI state.
+  - Exercise public `SettingsManager` behavior and assert `PiSettings` preserves the original failure cause.
+- [compat] Add model lookup error normalization.
+  - Pin deterministic public `ModelRegistry` missing-model behavior before exposing a wrapper contract.
+  - Keep the classifier conservative; unknown model failures should preserve causes through the fallback path.
 - [compat] Expose the Creo PI API surface through `pi-effect`.
   - Use `CREO_PI_API_SURFACE.md` as the migration checklist.
   - Cover auth, model registry, session/settings managers, resource loading, extension runtime, generic tools, builtin tool factories, and operation/result types.

@@ -23,7 +23,8 @@
 
 ## Change expectations
 - Update `README.md` when public usage or supported behavior changes.
-- Update `ROADMAP.md` when implementation status, near-term work, or PI compatibility priorities change.
+- Update `TODO.md` when near-term work or PI compatibility priorities change.
+- Update `WRAPPING_RULES.md` when durable adapter-design rules change.
 - Keep the pinned PI SDK version (`@earendil-works/pi-coding-agent@0.78.0`) unless the task is explicitly an upgrade; an upgrade must include compatibility-test updates.
 
 ## Safety and approvals
