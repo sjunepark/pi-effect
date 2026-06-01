@@ -2,7 +2,7 @@
 
 Effect-native adapter around the public [`@earendil-works/pi-coding-agent`](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) SDK.
 
-The package is intentionally small in the first implementation slice. It wraps PI sessions, prompts, event subscriptions, and custom tools with Effect-friendly lifecycles and typed error boundaries while keeping PI internals out of the public contract.
+`pi-effect` is intentionally PI SDK-shaped: it re-exports the PI SDK names downstream apps already know, then adds thin Effect companions such as `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`. The wrappers preserve PI objects and result shapes instead of introducing a parallel session/tool/model abstraction.
 
 ## Current status
 
@@ -10,12 +10,12 @@ Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.0`.
 
 Implemented:
 
-- scoped session acquisition with `Effect.acquireRelease`
-- prompt execution with PI preflight rejection mapped to `PiPromptRejectedError` and Effect interruption wired to `session.abort()`
-- session event streams with scoped unsubscribe cleanup
-- Effect handler adapter for PI `defineTool(...)`
-- settings `flush()` helper that fails on recorded persistence errors
-- model lookup helper with typed missing-model errors
+- scoped session creation with `createAgentSessionEffect(...)`, preserving PI's `CreateAgentSessionResult`
+- prompt execution through `AgentSessionEffect.prompt(...)`, with PI preflight rejection mapped to `AgentSessionPromptRejectedError` and Effect interruption wired to `session.abort()`
+- session event streams through `AgentSessionEffect.events(...)` / `AgentSessionEventStream.fromSession(...)`
+- Effect handler adapter for PI `defineTool(...)` via `defineToolEffect(...)`
+- settings `flush()` helper through `SettingsManagerEffect.flush(...)`, failing on recorded persistence errors
+- model lookup helper through `ModelRegistryEffect.find(...)`, with typed missing-model errors
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
@@ -33,27 +33,27 @@ Not implemented yet:
 
 ```ts
 import { Effect } from "effect";
-import { PiPrompt, PiSessionService } from "pi-effect";
+import { AgentSessionEffect } from "pi-effect";
 
 const program = Effect.scoped(
   Effect.gen(function* () {
-    const session = yield* PiSessionService.acquire({ noTools: "all" });
-    yield* PiPrompt.run(session, "List the files in this project");
+    const { session } = yield* AgentSessionEffect.create({ noTools: "all" });
+    yield* AgentSessionEffect.prompt(session, "List the files in this project");
   }),
 );
 
 await Effect.runPromise(program);
 ```
 
-`PiPrompt.run` is Effect-native: fiber interruption remains Effect interruption, and the wrapper uses `Effect.onInterrupt` to call `session.abort()` for PI cleanup.
+`AgentSessionEffect.prompt` is Effect-native: fiber interruption remains Effect interruption, and the wrapper uses `Effect.onInterrupt` to call `session.abort()` for PI cleanup.
 
 ### Event streams
 
 ```ts
 import { Stream } from "effect";
-import { PiEventStream } from "pi-effect";
+import { AgentSessionEffect } from "pi-effect";
 
-const events = PiEventStream.fromSession(session).pipe(Stream.take(10));
+const events = AgentSessionEffect.events(session).pipe(Stream.take(10));
 ```
 
 ### Tools
@@ -61,9 +61,9 @@ const events = PiEventStream.fromSession(session).pipe(Stream.take(10));
 ```ts
 import { Effect } from "effect";
 import { Type } from "typebox";
-import { PiTool } from "pi-effect";
+import { defineToolEffect } from "pi-effect";
 
-const echoTool = PiTool.make(
+const echoTool = defineToolEffect(
   {
     name: "echo",
     label: "Echo",
@@ -78,7 +78,7 @@ const echoTool = PiTool.make(
 );
 ```
 
-Effect failures from tool handlers are rejected as `PiToolExecutionError`; defects are rejected as `PiToolDefectError`; abort-signal interruption is rejected as `PiToolInterruptedError` with the original Effect `FiberFailure` preserved as `cause`. PI's agent loop converts rejected tool executions into error tool-result messages.
+Effect failures from tool handlers are rejected as `ToolEffectExecutionError`; defects are rejected as `ToolEffectDefectError`; abort-signal interruption is rejected as `ToolEffectInterruptedError` with the original Effect `FiberFailure` preserved as `cause`. PI's agent loop converts rejected tool executions into error tool-result messages.
 
 ## Development
 

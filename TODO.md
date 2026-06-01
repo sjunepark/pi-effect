@@ -29,22 +29,20 @@ This section keeps the actionable planning context without duplicating status do
 
 - Completed [compat] real public-SDK prompt preflight rejection coverage in `tests/compatibility/session.compat.test.ts`.
 - Completed [compat] file-backed settings persistence failure coverage in `tests/compatibility/settings.compat.test.ts`.
-- Completed [compat] stable model lookup error normalization with `PiModelRegistry.find(...)`.
+- Completed [compat] stable model lookup error normalization with `ModelRegistryEffect.find(...)`.
 - Completed [compat] Creo-facing facade exports from `pi-effect` root for the direct PI SDK imports tracked in `CREO_PI_API_SURFACE.md`.
-- Validation: `bun run typecheck && bun run test && bun run build` passed on 2026-06-01; removed generated `dist/` afterward.
-- Blocked decision: whether this `pi-effect` task should modify sibling `../creo` imports now, or leave Creo migration as downstream work.
-- Next after that decision: [integration] add opt-in real-agent smoke tests.
+- Completed [docs] PI SDK-shaped Effect wrapper naming: `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`.
+- Validation: `bun run typecheck`, `bun run test`, and `bun run build` passed on 2026-06-01; removed generated `dist/` afterward.
+- Creo import migration is deferred downstream; edit sibling `../creo` after the needed `pi-effect` repo work is complete.
+- Next: [integration] add opt-in real-agent smoke tests.
 
 ## Active plan order
 
-1. D/P1 [compat] Decide whether to migrate matching sibling `../creo` imports now or leave that migration downstream.
-   1. `pi-effect` facade exports and compatibility coverage are complete.
-   2. Touching `../creo` is cross-repository scope and needs explicit approval before editing.
-2. [integration] Add opt-in real-agent smoke tests that require credentials.
+1. [integration] Add opt-in real-agent smoke tests that require credentials.
    1. Do not run these from default `bun run test`.
    2. Add a dedicated script, for example `bun run test:real-agent`.
    3. Gate the suite with `PI_EFFECT_REAL_AGENT=1`; otherwise skip every test.
-   4. Use actual public PI SDK wiring: `AuthStorage`, `ModelRegistry`, `createAgentSession`, `PiPrompt.run`, and `PiEventStream.fromSession`.
+   4. Use actual public PI SDK wiring: `AuthStorage`, `ModelRegistry`, `createAgentSessionEffect`, `AgentSessionEffect.prompt`, and `AgentSessionEffect.events`.
    5. Support API-key mode through environment variables, for example:
       1. `PI_EFFECT_REAL_AGENT=1`
       2. `PI_EFFECT_PROVIDER=openai`
@@ -55,10 +53,10 @@ This section keeps the actionable planning context without duplicating status do
    8. Prefer temporary directories for session state unless explicitly reusing a user-provided PI agent dir.
    9. Cover at least one successful prompt against a real model.
       1. Keep the prompt deterministic and cheap, such as asking for a short exact string or JSON object.
-      2. Assert that `PiPrompt.run(...)` resolves.
+      2. Assert that `AgentSessionEffect.prompt(...)` resolves.
       3. Assert the real session records assistant output or emits an `agent_end` event.
    10. Cover event-stream behavior during a real prompt.
-      1. Subscribe through `PiEventStream.fromSession(session)` before running the prompt.
+      1. Subscribe through `AgentSessionEffect.events(session)` before running the prompt.
       2. Collect a small bounded set of lifecycle events or wait for `agent_end`.
       3. Assert ordering only for events that the public SDK contract makes stable.
    11. Cover interruption against a real active session if it can be made reliable.
@@ -66,7 +64,7 @@ This section keeps the actionable planning context without duplicating status do
       2. Interrupt the Effect fiber or abort the run promise signal.
       3. Assert `session.abort()` behavior leaves the session idle or emits an aborted/end state.
       4. Avoid brittle text-quality assertions for abort behavior.
-3. [docs] Document the real-agent test workflow.
+2. [docs] Document the real-agent test workflow.
    1. Add README instructions for `bun run test:real-agent`.
    2. Document every supported environment variable.
    3. State that default tests never require credentials.
@@ -75,7 +73,7 @@ This section keeps the actionable planning context without duplicating status do
       1. API key from provider environment variables such as `OPENAI_API_KEY`.
       2. Existing PI OAuth/subscription credentials through `PI_EFFECT_AGENT_DIR`.
    6. Note expected cost/network behavior and recommend cheap models for local smoke tests.
-4. [evals] Defer full evals unless behavior quality becomes a package goal.
+3. [evals] Defer full evals unless behavior quality becomes a package goal.
    1. Compatibility tests should answer whether `pi-effect` still matches public PI SDK behavior.
    2. Evals should answer whether the agent performs user tasks well.
    3. This package currently needs compatibility and smoke coverage more than behavioral evals.
@@ -92,9 +90,6 @@ This section keeps the actionable planning context without duplicating status do
 
 ## P1 — compatibility quality bar
 
-- D/P1 [compat] Decide whether to migrate sibling `../creo` imports now.
-  - `pi-effect` facade exports and compatibility tests are in place.
-  - Cross-repository edits need explicit approval.
 - [integration] Add opt-in real-agent smoke tests.
   - The suite should prove a real configured PI Agent can run through the wrapper.
   - The suite should be skipped unless `PI_EFFECT_REAL_AGENT=1` is set.

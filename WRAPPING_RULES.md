@@ -8,6 +8,20 @@ Wrap public `@earendil-works/pi-coding-agent` APIs first. Do not wrap `@earendil
 
 Keep wrappers shallow and Effect-native. `pi-effect` should make PI easier to use from Effect programs; it should not re-model PI concepts, hide useful PI details, or add app-specific policy.
 
+## Naming and Shape Policy
+
+`pi-effect` should be PI SDK-shaped, Effect-flavored. A user who knows the PI SDK should be able to predict the wrapper surface without learning a parallel vocabulary.
+
+Rules:
+
+- Re-export original PI SDK values and types under their original names when exposing facade APIs.
+- Name Effect wrappers by preserving the original PI SDK concept or function name and adding `Effect` where a distinction is needed: `createAgentSessionEffect`, `defineToolEffect`, `AgentSessionEffect`, `SettingsManagerEffect`, `ModelRegistryEffect`.
+- Preserve original PI result and object shapes unless changing the shape is the point of the wrapper. Example: `createAgentSessionEffect(...)` returns PI's `CreateAgentSessionResult`, not just the nested session.
+- Prefer wrapper namespaces around PI concepts over invented service names. Example: use `AgentSessionEffect.prompt(session, ...)` instead of a separate prompt service that hides `AgentSession.prompt(...)`.
+- Avoid alias-only renamed PI types. If the upstream type is exactly `PromptOptions` or `AgentSessionEvent`, export and use that name instead of adding a package-specific alias.
+- Use package-defined error names only for wrapper-owned failure boundaries. The names should still point back to the PI concept being wrapped, such as `AgentSessionPromptRejectedError` or `SettingsManagerPersistenceError`.
+- Public wrappers should have doc comments explaining which PI SDK API they wrap, what Effect semantics they add, what PI shape is preserved, and how original causes are retained.
+
 ## Boundary Types
 
 Classify each wrapper by the boundary it exposes:
@@ -33,7 +47,7 @@ Rules:
 
 Effect interruption is not the same as normal failure.
 
-For Effect-native APIs, preserve interruption as interruption. Use finalizers or `Effect.onInterrupt` for cleanup, but do not convert ordinary fiber interruption into a typed failure just to fit the error channel. Current example: `PiPrompt.run` remains interrupted when its fiber is interrupted, while `Effect.onInterrupt` calls `session.abort()` for PI cleanup.
+For Effect-native APIs, preserve interruption as interruption. Use finalizers or `Effect.onInterrupt` for cleanup, but do not convert ordinary fiber interruption into a typed failure just to fit the error channel. Current example: `AgentSessionEffect.prompt` remains interrupted when its fiber is interrupted, while `Effect.onInterrupt` calls `session.abort()` for PI cleanup.
 
 For non-Effect PI callback boundaries, JavaScript Promises have no interruption channel. If an Effect-backed implementation is exposed through a Promise API and interruption would otherwise reject with an Effect `FiberFailure`, wrap it in a stable package-defined interruption error and preserve the original `FiberFailure` as `cause`.
 
@@ -42,7 +56,7 @@ Current example:
 ```text
 Effect handler interrupted by PI AbortSignal
   -> Effect FiberFailure from runPromise
-  -> PiToolInterruptedError
+  -> ToolEffectInterruptedError
        cause: original FiberFailure
 ```
 

@@ -1,13 +1,20 @@
 import type { AgentSessionEvent, AgentSessionEventListener, PromptOptions } from "@earendil-works/pi-coding-agent";
-import type { PiSessionLike } from "../session/PiSession.js";
+import type { AgentSessionLike } from "../session/AgentSessionEffect.js";
 
-export interface FakePiSessionOptions {
+/** Options for `FakeAgentSession`, mirroring the PI SDK methods commonly customized in tests. */
+export interface FakeAgentSessionOptions {
   readonly sessionId?: string;
   readonly prompt?: (text: string, options?: PromptOptions) => Promise<void>;
   readonly abort?: () => Promise<void>;
 }
 
-export class FakePiSession implements PiSessionLike {
+/**
+ * Small in-memory test double for the PI SDK `AgentSession` methods wrapped by pi-effect.
+ *
+ * The fake intentionally keeps PI method names (`prompt`, `abort`, `subscribe`,
+ * `dispose`) so tests exercise the same structure production callers use.
+ */
+export class FakeAgentSession implements AgentSessionLike {
   readonly sessionId: string;
   readonly prompts: Array<{ readonly text: string; readonly options: PromptOptions | undefined }> = [];
   abortCount = 0;
@@ -22,7 +29,7 @@ export class FakePiSession implements PiSessionLike {
     return this.listeners.size;
   }
 
-  constructor(options: FakePiSessionOptions = {}) {
+  constructor(options: FakeAgentSessionOptions = {}) {
     this.sessionId = options.sessionId ?? "fake-session";
     this.promptImpl = options.prompt ?? (async () => {});
     this.abortImpl = options.abort ?? (async () => {});
@@ -58,4 +65,5 @@ export class FakePiSession implements PiSessionLike {
   }
 }
 
-export const fakePiSessionFactory = (session = new FakePiSession()) => async () => ({ session });
+/** Create a PI-compatible session factory for `createAgentSessionEffectFrom(...)` tests. */
+export const fakeAgentSessionFactory = (session = new FakeAgentSession()) => async () => ({ session });

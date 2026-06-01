@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Effect } from "effect";
 import { Type } from "typebox";
-import { PiSessionService } from "../../src/index.js";
+import { AgentSessionEffect } from "../../src/index.js";
 
 const adapterRuntimeExports = [
   "VERSION",
@@ -57,21 +57,21 @@ describe("pi-coding-agent 0.78 public SDK compatibility", () => {
     await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
-          const session = yield* PiSessionService.acquireFrom(async () => {
-            const result = await createAgentSession({
+          const result = yield* AgentSessionEffect.createFrom(async () => {
+            const created = await createAgentSession({
               sessionManager: SessionManager.inMemory(),
               settingsManager: SettingsManager.inMemory(),
               noTools: "all",
             });
-            const dispose = result.session.dispose.bind(result.session);
-            result.session.dispose = () => {
+            const dispose = created.session.dispose.bind(created.session);
+            created.session.dispose = () => {
               disposeCount += 1;
               dispose();
             };
-            return result;
+            return created;
           });
 
-          expect(session.sessionId).toEqual(expect.any(String));
+          expect(result.session.sessionId).toEqual(expect.any(String));
           expect(disposeCount).toBe(0);
         }),
       ),

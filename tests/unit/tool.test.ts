@@ -1,11 +1,16 @@
-import { describe, expect, it } from "vitest";
 import { Cause, Effect, Runtime } from "effect";
 import { Type } from "typebox";
-import { PiTool, PiToolDefectError, PiToolExecutionError, PiToolInterruptedError } from "../../src/index.js";
+import { describe, expect, it } from "vitest";
+import {
+  defineToolEffect,
+  ToolEffectDefectError,
+  ToolEffectExecutionError,
+  ToolEffectInterruptedError,
+} from "../../src/index.js";
 
-describe("PiTool", () => {
+describe("defineToolEffect", () => {
   it("converts Effect successes into PI tool results", async () => {
-    const tool = PiTool.make(
+    const tool = defineToolEffect(
       {
         name: "echo",
         label: "Echo",
@@ -26,7 +31,7 @@ describe("PiTool", () => {
   });
 
   it("converts Effect failures into typed rejected PI tool executions", async () => {
-    const tool = PiTool.make(
+    const tool = defineToolEffect(
       {
         name: "fail",
         label: "Fail",
@@ -37,13 +42,13 @@ describe("PiTool", () => {
     );
 
     await expect(tool.execute("call-1", {}, undefined, undefined, {} as never)).rejects.toBeInstanceOf(
-      PiToolExecutionError,
+      ToolEffectExecutionError,
     );
   });
 
   it("converts synchronous handler throws into typed rejected PI tool defects", async () => {
     const cause = new Error("handler crashed");
-    const tool = PiTool.make(
+    const tool = defineToolEffect(
       {
         name: "throw",
         label: "Throw",
@@ -56,14 +61,14 @@ describe("PiTool", () => {
     );
 
     await expect(tool.execute("call-1", {}, undefined, undefined, {} as never)).rejects.toMatchObject({
-      _tag: "PiToolDefectError",
+      _tag: "ToolEffectDefectError",
       cause,
-    } satisfies Partial<PiToolDefectError>);
+    } satisfies Partial<ToolEffectDefectError>);
   });
 
   it("converts Effect defects into typed rejected PI tool defects", async () => {
     const cause = new Error("effect died");
-    const tool = PiTool.make(
+    const tool = defineToolEffect(
       {
         name: "die",
         label: "Die",
@@ -74,13 +79,13 @@ describe("PiTool", () => {
     );
 
     await expect(tool.execute("call-1", {}, undefined, undefined, {} as never)).rejects.toMatchObject({
-      _tag: "PiToolDefectError",
+      _tag: "ToolEffectDefectError",
       cause,
-    } satisfies Partial<PiToolDefectError>);
+    } satisfies Partial<ToolEffectDefectError>);
   });
 
   it("preserves Effect interruption details inside typed tool interruption errors", async () => {
-    const tool = PiTool.make(
+    const tool = defineToolEffect(
       {
         name: "interrupt",
         label: "Interrupt",
@@ -95,9 +100,9 @@ describe("PiTool", () => {
     controller.abort();
 
     await expect(execution).rejects.toSatisfy((error: unknown) => {
-      expect(error).toBeInstanceOf(PiToolInterruptedError);
-      expect(error).toMatchObject({ _tag: "PiToolInterruptedError" } satisfies Partial<PiToolInterruptedError>);
-      const cause = (error as PiToolInterruptedError).cause;
+      expect(error).toBeInstanceOf(ToolEffectInterruptedError);
+      expect(error).toMatchObject({ _tag: "ToolEffectInterruptedError" } satisfies Partial<ToolEffectInterruptedError>);
+      const cause = (error as ToolEffectInterruptedError).cause;
       expect(Runtime.isFiberFailure(cause)).toBe(true);
       expect(Runtime.isFiberFailure(cause) && Cause.isInterruptedOnly(cause[Runtime.FiberFailureCauseId])).toBe(true);
       return true;

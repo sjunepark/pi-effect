@@ -12,13 +12,13 @@
 
 ## Code conventions
 - This is a TypeScript ESM package using `moduleResolution: "NodeNext"`; use `.js` extensions in relative source imports.
-- Keep wrappers shallow and Effect-native around the public `@earendil-works/pi-coding-agent` SDK.
+- Keep wrappers shallow, Effect-native, and PI SDK-shaped around the public `@earendil-works/pi-coding-agent` SDK; preserve upstream names and shapes where possible.
 - Preserve original causes in typed wrapper errors; avoid brittle private-message classification without compatibility coverage.
 - Keep modules narrow under `src/session`, `src/tools`, `src/settings`, and `src/testing`; avoid broad utility modules unless a repeated pattern is proven.
 
 ## Testing expectations
 - Put unit tests in `tests/unit` and public SDK compatibility tests in `tests/compatibility`.
-- Use `src/testing/FakePiSession.ts` for unit tests that should not require real model credentials.
+- Use `src/testing/FakeAgentSession.ts` for unit tests that should not require real model credentials.
 - When wrapper behavior depends on PI SDK contracts, add or update compatibility tests that exercise public `@earendil-works/pi-coding-agent` behavior.
 
 ## Change expectations

@@ -124,11 +124,11 @@ Likely useful while wrapping bash:
 
 ## pi-effect additions
 
-The stable facade is available; add Effect-native helpers later where repeated Creo usage proves they reduce boilerplate.
+The stable facade is available; add Effect-native helpers where repeated Creo usage proves they reduce boilerplate. Effect helpers should keep PI SDK names and shapes visible rather than introducing a parallel pi-effect vocabulary.
 
 ### 1. SDK facade exports — complete
 
-Creo-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/PiModelRegistry.ts`.
+Creo-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
 
 ### 2. Effect-native convenience wrappers
 

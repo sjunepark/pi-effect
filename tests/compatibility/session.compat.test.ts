@@ -10,7 +10,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Effect, Either, Stream } from "effect";
 import { Type } from "typebox";
-import { PiEventStream, PiPrompt, PiPromptRejectedError, PiTool } from "../../src/index.js";
+import { AgentSessionEffect, AgentSessionPromptRejectedError, defineToolEffect } from "../../src/index.js";
 
 type CreateAgentSessionOptions = NonNullable<Parameters<typeof createAgentSession>[0]>;
 
@@ -62,7 +62,7 @@ describe("PI AgentSession compatibility", () => {
     }
   });
 
-  it("maps real SDK prompt preflight rejection through PiPrompt", async () => {
+  it("maps real SDK prompt preflight rejection through AgentSessionEffect.prompt", async () => {
     const authStorage = AuthStorage.inMemory();
     const modelRegistry = ModelRegistry.inMemory(authStorage);
     const { session } = await createAgentSession({
@@ -78,12 +78,12 @@ describe("PI AgentSession compatibility", () => {
 
     try {
       const result = await Effect.runPromise(
-        PiPrompt.run(session, "hello", { preflightResult }).pipe(Effect.either),
+        AgentSessionEffect.prompt(session, "hello", { preflightResult }).pipe(Effect.either),
       );
 
       expect(Either.isLeft(result)).toBe(true);
       if (Either.isLeft(result)) {
-        expect(result.left).toBeInstanceOf(PiPromptRejectedError);
+        expect(result.left).toBeInstanceOf(AgentSessionPromptRejectedError);
         expect(result.left.cause).toBeInstanceOf(Error);
         expect((result.left.cause as Error).message).toContain("No API key found");
       }
@@ -93,13 +93,13 @@ describe("PI AgentSession compatibility", () => {
     }
   });
 
-  it("forwards deterministic real session events through PiEventStream in order", async () => {
+  it("forwards deterministic real session events through AgentSessionEffect.events in order", async () => {
     const { session } = await createInMemorySession();
     const nextThinkingLevel = session.thinkingLevel === "low" ? "medium" : "low";
 
     try {
       const collected = Effect.runPromise(
-        PiEventStream.fromSession(session).pipe(Stream.take(2), Stream.runCollect),
+        AgentSessionEffect.events(session).pipe(Stream.take(2), Stream.runCollect),
       );
 
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -115,8 +115,8 @@ describe("PI AgentSession compatibility", () => {
     }
   });
 
-  it("registers PiTool.make results as custom PI tool definitions", async () => {
-    const tool = PiTool.make(
+  it("registers defineToolEffect results as custom PI tool definitions", async () => {
+    const tool = defineToolEffect(
       {
         name: "effect_echo",
         label: "Effect Echo",
