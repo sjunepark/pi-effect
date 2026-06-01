@@ -25,34 +25,22 @@ This section keeps the actionable planning context without duplicating status do
 - **P1 — compatibility quality bar:** not individually blocking, but should be done before broadening the wrapper surface.
 - **P2 — later / optional:** useful after the core adapter contract is stable.
 
+## Current status
+
+- Completed [compat] real public-SDK prompt preflight rejection coverage in `tests/compatibility/session.compat.test.ts`.
+- Completed [compat] file-backed settings persistence failure coverage in `tests/compatibility/settings.compat.test.ts`.
+- Completed [compat] stable model lookup error normalization with `PiModelRegistry.find(...)`.
+- Completed [compat] Creo-facing facade exports from `pi-effect` root for the direct PI SDK imports tracked in `CREO_PI_API_SURFACE.md`.
+- Validation: `bun run typecheck && bun run test && bun run build` passed on 2026-06-01; removed generated `dist/` afterward.
+- Blocked decision: whether this `pi-effect` task should modify sibling `../creo` imports now, or leave Creo migration as downstream work.
+- Next after that decision: [integration] add opt-in real-agent smoke tests.
+
 ## Active plan order
 
-1. [compat] Add real public-SDK prompt compatibility coverage for preflight rejection.
-   1. Keep this in the default test suite because it should not require credentials or live model calls.
-   2. Use `createAgentSession(...)` with in-memory `SessionManager` and `SettingsManager`.
-   3. Configure the session so prompt preflight fails deterministically, such as no selected model or no usable auth for the selected model.
-   4. Call `PiPrompt.run(session, "hello", { preflightResult })` rather than calling `session.prompt(...)` directly.
-   5. Assert the wrapper fails with `PiPromptRejectedError`.
-   6. Assert the caller-provided `preflightResult(false)` hook is invoked.
-   7. Assert the original PI rejection cause is preserved on the wrapper error when available.
-   8. Dispose the real session in `finally` or through `PiSessionService.acquireFrom(...)`.
-2. [compat] Add file-backed settings persistence failure coverage.
-   1. Use temporary directories or files only.
-   2. Exercise public `SettingsManager` behavior, not private internals.
-   3. Assert `PiSettings.flush(...)` / `drainErrors(...)` surfaces recorded persistence failures as `PiSettingsPersistenceError`.
-   4. Preserve the original SDK error as the wrapper cause.
-3. [compat] Add stable model lookup error normalization.
-   1. Use public `ModelRegistry` behavior from the pinned PI SDK.
-   2. Cover a deterministic missing-model or unavailable-model path.
-   3. Normalize through a typed wrapper error only where callers can act on it.
-   4. Preserve unknown model failures through `PiUnknownError` or the relevant conservative fallback.
-4. [compat] Expose the Creo PI API surface through `pi-effect` one area at a time.
-   1. Use `CREO_PI_API_SURFACE.md` as the source checklist.
-   2. Start with facade exports for the direct Creo imports, then add Effect-native helpers where they reduce Creo boilerplate.
-   3. For each API area, add compatibility tests that import from `pi-effect` only and prove behavior against the pinned PI SDK.
-   4. Migrate the matching Creo imports after the `pi-effect` surface is covered.
-   5. Keep the pinned PI SDK version unchanged unless the task is explicitly an upgrade.
-5. [integration] Add opt-in real-agent smoke tests that require credentials.
+1. D/P1 [compat] Decide whether to migrate matching sibling `../creo` imports now or leave that migration downstream.
+   1. `pi-effect` facade exports and compatibility coverage are complete.
+   2. Touching `../creo` is cross-repository scope and needs explicit approval before editing.
+2. [integration] Add opt-in real-agent smoke tests that require credentials.
    1. Do not run these from default `bun run test`.
    2. Add a dedicated script, for example `bun run test:real-agent`.
    3. Gate the suite with `PI_EFFECT_REAL_AGENT=1`; otherwise skip every test.
@@ -78,7 +66,7 @@ This section keeps the actionable planning context without duplicating status do
       2. Interrupt the Effect fiber or abort the run promise signal.
       3. Assert `session.abort()` behavior leaves the session idle or emits an aborted/end state.
       4. Avoid brittle text-quality assertions for abort behavior.
-6. [docs] Document the real-agent test workflow.
+3. [docs] Document the real-agent test workflow.
    1. Add README instructions for `bun run test:real-agent`.
    2. Document every supported environment variable.
    3. State that default tests never require credentials.
@@ -87,7 +75,7 @@ This section keeps the actionable planning context without duplicating status do
       1. API key from provider environment variables such as `OPENAI_API_KEY`.
       2. Existing PI OAuth/subscription credentials through `PI_EFFECT_AGENT_DIR`.
    6. Note expected cost/network behavior and recommend cheap models for local smoke tests.
-7. [evals] Defer full evals unless behavior quality becomes a package goal.
+4. [evals] Defer full evals unless behavior quality becomes a package goal.
    1. Compatibility tests should answer whether `pi-effect` still matches public PI SDK behavior.
    2. Evals should answer whether the agent performs user tasks well.
    3. This package currently needs compatibility and smoke coverage more than behavioral evals.
@@ -100,23 +88,13 @@ This section keeps the actionable planning context without duplicating status do
 
 ## P0 — compatibility blockers
 
-- [compat] Add default real-SDK prompt preflight rejection coverage.
-  - This closes the current gap where key `PiPrompt.run` behavior is only exercised with `FakePiSession`.
-  - The test must run without API keys or OAuth credentials.
-  - The test should pin public `AgentSession.prompt(...)` preflight behavior through the wrapper, not through PI private internals.
+- None.
 
 ## P1 — compatibility quality bar
 
-- [compat] Add file-backed settings persistence failure coverage.
-  - Use temporary directories or files to avoid touching user PI state.
-  - Exercise public `SettingsManager` behavior and assert `PiSettings` preserves the original failure cause.
-- [compat] Add model lookup error normalization.
-  - Pin deterministic public `ModelRegistry` missing-model behavior before exposing a wrapper contract.
-  - Keep the classifier conservative; unknown model failures should preserve causes through the fallback path.
-- [compat] Expose the Creo PI API surface through `pi-effect`.
-  - Use `CREO_PI_API_SURFACE.md` as the migration checklist.
-  - Cover auth, model registry, session/settings managers, resource loading, extension runtime, generic tools, builtin tool factories, and operation/result types.
-  - Add compatibility tests that import only from `pi-effect` before changing Creo imports.
+- D/P1 [compat] Decide whether to migrate sibling `../creo` imports now.
+  - `pi-effect` facade exports and compatibility tests are in place.
+  - Cross-repository edits need explicit approval.
 - [integration] Add opt-in real-agent smoke tests.
   - The suite should prove a real configured PI Agent can run through the wrapper.
   - The suite should be skipped unless `PI_EFFECT_REAL_AGENT=1` is set.

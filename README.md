@@ -14,16 +14,18 @@ Implemented:
 - prompt execution with PI preflight rejection mapped to `PiPromptRejectedError` and Effect interruption wired to `session.abort()`
 - session event streams with scoped unsubscribe cleanup
 - Effect handler adapter for PI `defineTool(...)`
-- settings `flush()` / `drainErrors()` helper that fails on recorded persistence errors
+- settings `flush()` helper that fails on recorded persistence errors
+- model lookup helper with typed missing-model errors
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
-- a Creo import-surface sentinel covering the PI SDK exports Creo currently uses directly
+- facade exports for the public PI SDK APIs Creo currently imports directly
+- a Creo import-surface sentinel covering the upstream PI SDK exports Creo currently uses directly
 
 Not implemented yet:
 
-- model/auth/resource-loader helpers
-- broader PI SDK wrappers outside the current adapter contract
+- auth/resource-loader helpers
+- broader Effect-native PI SDK wrappers outside the current adapter contract
 - deeper PI error classification beyond conservative wrapper errors
 - real-model integration tests
 
@@ -96,9 +98,10 @@ Currently supported adapter surface:
 - `createAgentSession(...)` and the `AgentSession` members used here: `sessionId`, `prompt`, `abort`, `subscribe`, `dispose`, and custom tool lookup
 - `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
 - `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
+- `ModelRegistry.find(...)` for typed model lookup
 - public session events consumed through `AgentSession.subscribe(...)`
 
-The suite also has a shallow Creo import-surface sentinel for direct SDK use that is not fully wrapped by `pi-effect` yet: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
+The suite also has a shallow Creo import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct Creo imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
 Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 

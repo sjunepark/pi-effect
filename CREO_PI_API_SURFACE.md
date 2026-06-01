@@ -4,6 +4,12 @@ This file tracks the additional `@earendil-works/pi-coding-agent@0.78.0` APIs th
 
 Goal: migrate Creo one API area at a time. Each section should become importable from `pi-effect` with compatibility tests proving it maps to the pinned PI SDK behavior.
 
+## Current status
+
+- `pi-effect` now exposes facade exports for the direct Creo imports listed below.
+- Compatibility coverage: `tests/compatibility/creo-pi-effect-surface.compat.test.ts` imports those APIs from `pi-effect` only and exercises representative manager, session, custom-tool, and builtin-tool behavior against the pinned PI SDK.
+- Remaining work is downstream migration: change Creo imports from `@earendil-works/pi-coding-agent` to `pi-effect` one area at a time, then keep this checklist current.
+
 ## Current direct Creo imports
 
 ### Session creation and lifecycle
@@ -157,8 +163,8 @@ Add tests that import only from `pi-effect` and mirror Creo usage:
 
 For each section:
 
-- [ ] Expose from `pi-effect` root or documented submodule.
-- [ ] Add or update compatibility tests against the pinned PI SDK.
-- [ ] Update README usage/status.
+- [x] Expose from `pi-effect` root or documented submodule.
+- [x] Add or update compatibility tests against the pinned PI SDK.
+- [x] Update README usage/status.
 - [ ] Update this file with migration notes or mark complete.
 - [ ] Change Creo imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect`.
