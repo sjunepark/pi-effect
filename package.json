@@ -1,0 +1,36 @@
+{
+  "name": "pi-effect",
+  "version": "0.1.0",
+  "description": "Effect-native adapter around the public pi coding agent SDK.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "ROADMAP.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest --run",
+    "typecheck": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.78.0",
+    "effect": "^3.19.6",
+    "typebox": "1.1.38"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
