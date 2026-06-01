@@ -14,6 +14,7 @@ Implemented:
 - prompt execution with PI preflight rejection mapped to `PiPromptRejectedError` and Effect interruption wired to `session.abort()`
 - session event streams with scoped unsubscribe cleanup
 - Effect handler adapter for PI `defineTool(...)`
+- settings `flush()` / `drainErrors()` helper that fails on recorded persistence errors
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned public PI SDK surface
@@ -21,7 +22,6 @@ Implemented:
 Not implemented yet:
 
 - model/auth/resource-loader helpers
-- settings flush/drain wrappers
 - deeper PI error classification beyond conservative wrapper errors
 - real-model integration tests
 

@@ -14,6 +14,7 @@ Implemented wrappers:
 - `PiPrompt.run` for prompt execution with preflight rejection mapping and Effect interruption wired to `session.abort()`
 - `PiEventStream.fromSession` for ordered event forwarding with scoped unsubscribe cleanup
 - `PiTool.make` for adapting Effect-returning handlers into PI `defineTool(...)` definitions
+- `PiSettings.flush` / `drainErrors` for surfacing PI settings persistence boundaries
 - conservative typed errors and fake session testing fixtures
 
 Implemented validation:
@@ -21,7 +22,7 @@ Implemented validation:
 - unit tests for session release, prompt success, prompt interruption, event stream cleanup, and tool success/failure behavior
 - compatibility tests documenting the pinned PI SDK version, public SDK session acquisition, and `defineTool` execution shape
 
-Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, real PI event ordering, settings flush/drain behavior, and model lookup error normalization.
+Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, real PI event ordering, settings persistence failures from file-backed storage, and model lookup error normalization.
 
 ## Core decision
 
@@ -244,4 +245,4 @@ Creo workflow orchestration
 
 ## Next developer task
 
-Deepen the compatibility suite before adding broad wrappers. Prioritize prompt preflight rejection behavior, event subscription ordering on a real `AgentSession`, settings `flush()` / `drainErrors()` boundaries, and stable model lookup failures. Keep model/auth/resource-loader wrappers deferred until a downstream app has repeated real usage.
+Deepen the compatibility suite before adding broad wrappers. Prioritize prompt preflight rejection behavior, event subscription ordering on a real `AgentSession`, file-backed settings persistence failures, and stable model lookup failures. Keep model/auth/resource-loader wrappers deferred until a downstream app has repeated real usage.
