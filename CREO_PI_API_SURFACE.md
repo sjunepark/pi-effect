@@ -122,21 +122,13 @@ Likely useful while wrapping bash:
 - `type BashSpawnContext`
 - `type BashSpawnHook`
 
-## Proposed pi-effect additions
+## pi-effect additions
 
-Start with a stable facade, then add Effect-native helpers where useful.
+The stable facade is available; add Effect-native helpers later where repeated Creo usage proves they reduce boilerplate.
 
-### 1. SDK facade exports
+### 1. SDK facade exports — complete
 
-Expose Creo-needed public PI SDK values and types from `pi-effect`, preferably under explicit names or namespaces so the dependency boundary is clear.
-
-Candidate modules:
-
-- `src/auth/PiAuth.ts`
-- `src/model/PiModelRegistry.ts`
-- `src/resource/PiResourceLoader.ts`
-- `src/session/PiSessionManager.ts`
-- `src/tools/PiBuiltinTools.ts`
+Creo-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/PiModelRegistry.ts`.
 
 ### 2. Effect-native convenience wrappers
 
@@ -148,9 +140,9 @@ After direct facade compatibility is covered, add wrappers where they reduce Cre
 - in-memory session/settings manager creation
 - built-in tool definition creation with operation injection
 
-### 3. Compatibility tests
+### 3. Compatibility tests — complete
 
-Add tests that import only from `pi-effect` and mirror Creo usage:
+Compatibility tests import only from `pi-effect` and mirror Creo usage:
 
 - auth backend + `AuthStorage.fromStorage(...)`
 - `ModelRegistry.create(...).find(...)`
@@ -166,5 +158,5 @@ For each section:
 - [x] Expose from `pi-effect` root or documented submodule.
 - [x] Add or update compatibility tests against the pinned PI SDK.
 - [x] Update README usage/status.
-- [ ] Update this file with migration notes or mark complete.
+- [x] Update this file with migration notes or mark complete.
 - [ ] Change Creo imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect`.
