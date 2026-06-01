@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest --run",
+    "test:real-agent": "vitest --run --config vitest.real-agent.config.ts",
     "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {

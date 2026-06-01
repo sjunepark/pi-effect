@@ -19,6 +19,7 @@ Implemented:
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
+- opt-in real-agent smoke tests for live wrapper wiring
 - facade exports for the public PI SDK APIs Creo currently imports directly
 - a Creo import-surface sentinel covering the upstream PI SDK exports Creo currently uses directly
 
@@ -27,7 +28,6 @@ Not implemented yet:
 - auth/resource-loader helpers
 - broader Effect-native PI SDK wrappers outside the current adapter contract
 - deeper PI error classification beyond conservative wrapper errors
-- real-model integration tests
 
 ## Usage
 
@@ -88,6 +88,30 @@ bun run typecheck
 bun run test
 bun run build
 ```
+
+Default tests never require credentials or live provider access.
+
+### Opt-in real-agent smoke test
+
+Run the credential-dependent smoke test only when you explicitly want a live model call:
+
+```bash
+PI_EFFECT_REAL_AGENT=1 \
+PI_EFFECT_PROVIDER=openai \
+PI_EFFECT_MODEL=gpt-4.1-mini \
+OPENAI_API_KEY=... \
+bun run test:real-agent
+```
+
+Supported environment variables:
+
+- `PI_EFFECT_REAL_AGENT=1` enables the suite; without it, every real-agent test is skipped.
+- `PI_EFFECT_PROVIDER` selects the PI provider name. Defaults to `openai`.
+- `PI_EFFECT_MODEL` selects the model ID. Defaults to `gpt-4.1-mini`.
+- Provider credentials use the normal PI SDK environment variables, such as `OPENAI_API_KEY` for `openai`.
+- `PI_EFFECT_AGENT_DIR=/path/to/.pi/agent` reuses an existing PI agent directory for OAuth/subscription credentials and custom `models.json`.
+
+Do not paste API keys into chat, commits, issues, or fixtures. The API-key path uses provider environment variables and temporary session state. The OAuth/subscription path reads local credentials from `PI_EFFECT_AGENT_DIR`. The smoke test makes real network requests and may incur provider cost, so prefer cheap, fast models.
 
 ## Compatibility strategy
 

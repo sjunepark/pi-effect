@@ -3,6 +3,6 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     globals: false,
-    include: ["tests/unit/**/*.test.ts", "tests/compatibility/**/*.test.ts"],
+    include: ["tests/integration/real-agent.test.ts"],
   },
 });
