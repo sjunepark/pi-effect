@@ -11,7 +11,7 @@ Initial package scaffolding is in place with `@earendil-works/pi-coding-agent@0.
 Implemented wrappers:
 
 - `PiSessionService.acquire` / `acquireFrom` for scoped session lifecycle and single `dispose()` release
-- `PiPrompt.run` for prompt execution with Effect interruption wired to `session.abort()`
+- `PiPrompt.run` for prompt execution with preflight rejection mapping and Effect interruption wired to `session.abort()`
 - `PiEventStream.fromSession` for ordered event forwarding with scoped unsubscribe cleanup
 - `PiTool.make` for adapting Effect-returning handlers into PI `defineTool(...)` definitions
 - conservative typed errors and fake session testing fixtures
@@ -21,7 +21,7 @@ Implemented validation:
 - unit tests for session release, prompt success, prompt interruption, event stream cleanup, and tool success/failure behavior
 - compatibility tests documenting the pinned PI SDK version, public SDK session acquisition, and `defineTool` execution shape
 
-Remaining near-term work should deepen compatibility coverage before broadening API surface, especially prompt rejection semantics, real PI event ordering, settings flush/drain behavior, and model lookup error normalization.
+Remaining near-term work should deepen compatibility coverage before broadening API surface, especially real PI preflight rejection behavior, real PI event ordering, settings flush/drain behavior, and model lookup error normalization.
 
 ## Core decision
 

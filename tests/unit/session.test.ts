@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { Effect, Stream } from "effect";
-import { PiEventStream, PiPrompt, PiSessionService } from "../../src/index.js";
+import { Effect, Either, Stream } from "effect";
+import { PiEventStream, PiPrompt, PiPromptError, PiPromptRejectedError, PiSessionService } from "../../src/index.js";
 import { FakePiSession, fakePiSessionFactory } from "../../src/testing/FakePiSession.js";
 import type { AgentSessionEvent } from "@earendil-works/pi-coding-agent";
 
@@ -28,7 +28,45 @@ describe("PiPrompt", () => {
 
     await Effect.runPromise(PiPrompt.run(session, "hello"));
 
-    expect(session.prompts).toEqual([{ text: "hello", options: undefined }]);
+    expect(session.prompts).toEqual([
+      { text: "hello", options: { preflightResult: expect.any(Function) } },
+    ]);
+  });
+
+  it("maps PI preflight rejection to PiPromptRejectedError", async () => {
+    const preflightResult = vi.fn();
+    const session = new FakePiSession({
+      prompt: async (_text, options) => {
+        options?.preflightResult?.(false);
+      },
+    });
+
+    const result = await Effect.runPromise(
+      PiPrompt.run(session, "rejected", { preflightResult }).pipe(Effect.either),
+    );
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) expect(result.left).toBeInstanceOf(PiPromptRejectedError);
+    expect(preflightResult).toHaveBeenCalledWith(false);
+  });
+
+  it("normalizes prompt failures while preserving the original cause", async () => {
+    const cause = new Error("provider failed");
+    const session = new FakePiSession({
+      prompt: async () => {
+        throw cause;
+      },
+    });
+
+    const result = await Effect.runPromise(PiPrompt.run(session, "fail").pipe(Effect.either));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toMatchObject({
+        _tag: "PiPromptError",
+        cause,
+      } satisfies Partial<PiPromptError>);
+    }
   });
 
   it("aborts the PI session when the Effect fiber is interrupted", async () => {

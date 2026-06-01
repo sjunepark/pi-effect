@@ -9,6 +9,17 @@ import {
 
 export type PiPromptFailure = PiPromptError | PiPromptRejectedError | PiSessionAbortedError;
 
+const withPreflightRejectionTracking = (
+  options: PiPromptOptions | undefined,
+  reject: () => void,
+): PiPromptOptions => ({
+  ...options,
+  preflightResult: (success) => {
+    if (!success) reject();
+    options?.preflightResult?.(success);
+  },
+});
+
 const abortSession = (session: PiSessionLike): Effect.Effect<void> =>
   Effect.tryPromise({
     try: () => session.abort(),
@@ -22,7 +33,16 @@ export const run = (
   options?: PiPromptOptions,
 ): Effect.Effect<void, PiPromptFailure> =>
   Effect.tryPromise({
-    try: () => session.prompt(input, options),
+    try: async () => {
+      let rejected = false;
+      await session.prompt(
+        input,
+        withPreflightRejectionTracking(options, () => {
+          rejected = true;
+        }),
+      );
+      if (rejected) throw new PiPromptRejectedError();
+    },
     catch: normalizePromptError,
   }).pipe(Effect.onInterrupt(() => abortSession(session)));
 

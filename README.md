@@ -11,7 +11,7 @@ Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.0`.
 Implemented:
 
 - scoped session acquisition with `Effect.acquireRelease`
-- prompt execution with Effect interruption wired to `session.abort()`
+- prompt execution with PI preflight rejection mapped to `PiPromptRejectedError` and Effect interruption wired to `session.abort()`
 - session event streams with scoped unsubscribe cleanup
 - Effect handler adapter for PI `defineTool(...)`
 - conservative typed wrapper errors with original causes preserved
