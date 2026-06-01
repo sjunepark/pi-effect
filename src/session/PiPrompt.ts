@@ -32,18 +32,23 @@ export const run = (
   input: string,
   options?: PiPromptOptions,
 ): Effect.Effect<void, PiPromptFailure> =>
-  Effect.tryPromise({
-    try: async () => {
-      let rejected = false;
-      await session.prompt(
-        input,
-        withPreflightRejectionTracking(options, () => {
-          rejected = true;
-        }),
-      );
-      if (rejected) throw new PiPromptRejectedError();
-    },
-    catch: normalizePromptError,
+  Effect.suspend(() => {
+    let rejected = false;
+    return Effect.tryPromise({
+      try: async () => {
+        await session.prompt(
+          input,
+          withPreflightRejectionTracking(options, () => {
+            rejected = true;
+          }),
+        );
+        if (rejected) throw new PiPromptRejectedError();
+      },
+      catch: (cause) => {
+        if (!rejected) return normalizePromptError(cause);
+        return cause instanceof PiPromptRejectedError ? cause : new PiPromptRejectedError({ cause });
+      },
+    });
   }).pipe(Effect.onInterrupt(() => abortSession(session)));
 
 export const PiPrompt = {

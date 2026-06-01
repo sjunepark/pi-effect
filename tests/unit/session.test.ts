@@ -34,10 +34,12 @@ describe("PiPrompt", () => {
   });
 
   it("maps PI preflight rejection to PiPromptRejectedError", async () => {
+    const cause = new Error("no model selected");
     const preflightResult = vi.fn();
     const session = new FakePiSession({
       prompt: async (_text, options) => {
         options?.preflightResult?.(false);
+        throw cause;
       },
     });
 
@@ -46,7 +48,10 @@ describe("PiPrompt", () => {
     );
 
     expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) expect(result.left).toBeInstanceOf(PiPromptRejectedError);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(PiPromptRejectedError);
+      expect(result.left.cause).toBe(cause);
+    }
     expect(preflightResult).toHaveBeenCalledWith(false);
   });
 
@@ -65,6 +70,39 @@ describe("PiPrompt", () => {
       expect(result.left).toMatchObject({
         _tag: "PiPromptError",
         cause,
+      } satisfies Partial<PiPromptError>);
+    }
+  });
+
+  it("keeps preflight rejection tracking isolated per Effect execution", async () => {
+    const preflightCause = new Error("no model selected");
+    const promptCause = new Error("provider failed later");
+    let runCount = 0;
+    const session = new FakePiSession({
+      prompt: async (_text, options) => {
+        runCount += 1;
+        if (runCount === 1) {
+          options?.preflightResult?.(false);
+          throw preflightCause;
+        }
+        throw promptCause;
+      },
+    });
+    const program = PiPrompt.run(session, "reuse me").pipe(Effect.either);
+
+    const first = await Effect.runPromise(program);
+    const second = await Effect.runPromise(program);
+
+    expect(Either.isLeft(first)).toBe(true);
+    if (Either.isLeft(first)) {
+      expect(first.left).toBeInstanceOf(PiPromptRejectedError);
+      expect(first.left.cause).toBe(preflightCause);
+    }
+    expect(Either.isLeft(second)).toBe(true);
+    if (Either.isLeft(second)) {
+      expect(second.left).toMatchObject({
+        _tag: "PiPromptError",
+        cause: promptCause,
       } satisfies Partial<PiPromptError>);
     }
   });

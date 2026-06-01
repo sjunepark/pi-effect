@@ -7,7 +7,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Effect, Either } from "effect";
 import type { Static, TSchema } from "typebox";
-import { PiToolExecutionError } from "./PiToolError.js";
+import { PiToolDefectError, PiToolExecutionError } from "./PiToolError.js";
 
 export interface PiToolHandlerContext<TParams extends TSchema, TDetails> {
   readonly toolCallId: string;
@@ -39,8 +39,9 @@ export const make = <TParams extends TSchema, TDetails = unknown, TState = unkno
   defineTool<TParams, TDetails, TState>({
     ...config,
     execute: (toolCallId, params, signal, onUpdate, piContext) => {
-      const effect = handler({ toolCallId, params, signal, onUpdate, piContext }).pipe(
+      const effect = Effect.suspend(() => handler({ toolCallId, params, signal, onUpdate, piContext })).pipe(
         Effect.mapError((cause) => new PiToolExecutionError({ cause })),
+        Effect.catchAllDefect((cause) => Effect.fail(new PiToolDefectError({ cause }))),
         Effect.either,
       );
       return Effect.runPromise(effect, { signal }).then((result) => {
