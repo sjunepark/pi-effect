@@ -24,7 +24,13 @@ Scratchpad and triage index.
    6. Assert the caller-provided `preflightResult(false)` hook is invoked.
    7. Assert the original PI rejection cause is preserved on the wrapper error when available.
    8. Dispose the real session in `finally` or through `PiSessionService.acquireFrom(...)`.
-2. [integration] Add opt-in real-agent smoke tests that require credentials.
+2. [compat] Expose the Creo PI API surface through `pi-effect` one area at a time.
+   1. Use `CREO_PI_API_SURFACE.md` as the source checklist.
+   2. Start with facade exports for the direct Creo imports, then add Effect-native helpers where they reduce Creo boilerplate.
+   3. For each API area, add compatibility tests that import from `pi-effect` only and prove behavior against the pinned PI SDK.
+   4. Migrate the matching Creo imports after the `pi-effect` surface is covered.
+   5. Keep the pinned PI SDK version unchanged unless the task is explicitly an upgrade.
+3. [integration] Add opt-in real-agent smoke tests that require credentials.
    1. Do not run these from default `bun run test`.
    2. Add a dedicated script, for example `bun run test:real-agent`.
    3. Gate the suite with `PI_EFFECT_REAL_AGENT=1`; otherwise skip every test.
@@ -50,7 +56,7 @@ Scratchpad and triage index.
       2. Interrupt the Effect fiber or abort the run promise signal.
       3. Assert `session.abort()` behavior leaves the session idle or emits an aborted/end state.
       4. Avoid brittle text-quality assertions for abort behavior.
-3. [docs] Document the real-agent test workflow.
+4. [docs] Document the real-agent test workflow.
    1. Add README instructions for `bun run test:real-agent`.
    2. Document every supported environment variable.
    3. State that default tests never require credentials.
@@ -59,7 +65,7 @@ Scratchpad and triage index.
       1. API key from provider environment variables such as `OPENAI_API_KEY`.
       2. Existing PI OAuth/subscription credentials through `PI_EFFECT_AGENT_DIR`.
    6. Note expected cost/network behavior and recommend cheap models for local smoke tests.
-4. [evals] Defer full evals unless behavior quality becomes a package goal.
+5. [evals] Defer full evals unless behavior quality becomes a package goal.
    1. Compatibility tests should answer whether `pi-effect` still matches public PI SDK behavior.
    2. Evals should answer whether the agent performs user tasks well.
    3. This package currently needs compatibility and smoke coverage more than behavioral evals.
@@ -79,6 +85,10 @@ Scratchpad and triage index.
 
 ## P1 — compatibility quality bar
 
+- [compat] Expose the Creo PI API surface through `pi-effect`.
+  - Use `CREO_PI_API_SURFACE.md` as the migration checklist.
+  - Cover auth, model registry, session/settings managers, resource loading, extension runtime, generic tools, builtin tool factories, and operation/result types.
+  - Add compatibility tests that import only from `pi-effect` before changing Creo imports.
 - [integration] Add opt-in real-agent smoke tests.
   - The suite should prove a real configured PI Agent can run through the wrapper.
   - The suite should be skipped unless `PI_EFFECT_REAL_AGENT=1` is set.
