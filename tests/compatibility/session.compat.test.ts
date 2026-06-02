@@ -6,6 +6,7 @@ import {
   ModelRegistry,
   SessionManager,
   SettingsManager,
+  type AgentSessionEvent,
   type ResourceLoader,
 } from "@earendil-works/pi-coding-agent";
 import { Effect, Either, Stream } from "effect";
@@ -46,6 +47,32 @@ const createInMemorySession = () =>
     resourceLoader: createCompatResourceLoader(),
     noTools: "all",
   });
+
+const collectSessionEventsAfterSubscription = (
+  session: Parameters<typeof AgentSessionEffect.events>[0],
+  count: number,
+) => {
+  const originalSubscribe = session.subscribe.bind(session);
+  let restoreSubscribeSpy: (() => void) | undefined;
+  const subscribed = new Promise<void>((resolve) => {
+    const subscribeSpy = vi.spyOn(session, "subscribe").mockImplementation((listener) => {
+      const unsubscribe = originalSubscribe(listener);
+      resolve();
+      return unsubscribe;
+    });
+    restoreSubscribeSpy = () => subscribeSpy.mockRestore();
+  });
+
+  return {
+    collected: Effect.runPromise(
+      AgentSessionEffect.events(session).pipe(Stream.take(count), Stream.runCollect),
+    ).then((events) => Array.from(events)),
+    waitUntilSubscribed: async () => {
+      await subscribed;
+      restoreSubscribeSpy?.();
+    },
+  };
+};
 
 describe("PI AgentSession compatibility", () => {
   it("provides the public AgentSession members used by pi-effect", async () => {
@@ -96,29 +123,33 @@ describe("PI AgentSession compatibility", () => {
   it("forwards deterministic real session metadata events through AgentSessionEffect.events in order", async () => {
     const { session } = await createInMemorySession();
 
-    const originalSubscribe = session.subscribe.bind(session);
-    const subscribed = new Promise<void>((resolve) => {
-      vi.spyOn(session, "subscribe").mockImplementation((listener) => {
-        const unsubscribe = originalSubscribe(listener);
-        resolve();
-        return unsubscribe;
-      });
-    });
-
     try {
-      const collected = Effect.runPromise(
-        AgentSessionEffect.events(session).pipe(Stream.take(2), Stream.runCollect),
-      );
+      const { collected, waitUntilSubscribed } = collectSessionEventsAfterSubscription(session, 2);
 
-      await subscribed;
+      await waitUntilSubscribed();
       session.setSessionName("compat-session-one");
       session.setSessionName("compat-session-two");
 
-      expect(Array.from(await collected)).toEqual([
+      expect(await collected).toEqual([
         { type: "session_info_changed", name: "compat-session-one" },
         { type: "session_info_changed", name: "compat-session-two" },
       ]);
     } finally {
+      session.dispose();
+    }
+  });
+
+  it("keeps PI thinking-level selection idempotent for unchanged effective levels", async () => {
+    const { session } = await createInMemorySession();
+    const receivedEvents: AgentSessionEvent[] = [];
+    const unsubscribe = session.subscribe((event) => receivedEvents.push(event));
+
+    try {
+      session.setThinkingLevel(session.thinkingLevel);
+
+      expect(receivedEvents.filter((event) => event.type === "thinking_level_changed")).toEqual([]);
+    } finally {
+      unsubscribe();
       session.dispose();
     }
   });
