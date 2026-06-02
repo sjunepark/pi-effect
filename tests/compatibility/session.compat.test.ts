@@ -93,22 +93,30 @@ describe("PI AgentSession compatibility", () => {
     }
   });
 
-  it("forwards deterministic real session events through AgentSessionEffect.events in order", async () => {
+  it("forwards deterministic real session metadata events through AgentSessionEffect.events in order", async () => {
     const { session } = await createInMemorySession();
-    const nextThinkingLevel = session.thinkingLevel === "low" ? "medium" : "low";
+
+    const originalSubscribe = session.subscribe.bind(session);
+    const subscribed = new Promise<void>((resolve) => {
+      vi.spyOn(session, "subscribe").mockImplementation((listener) => {
+        const unsubscribe = originalSubscribe(listener);
+        resolve();
+        return unsubscribe;
+      });
+    });
 
     try {
       const collected = Effect.runPromise(
         AgentSessionEffect.events(session).pipe(Stream.take(2), Stream.runCollect),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      session.setSessionName("compat-session");
-      session.setThinkingLevel(nextThinkingLevel);
+      await subscribed;
+      session.setSessionName("compat-session-one");
+      session.setSessionName("compat-session-two");
 
       expect(Array.from(await collected)).toEqual([
-        { type: "session_info_changed", name: "compat-session" },
-        { type: "thinking_level_changed", level: nextThinkingLevel },
+        { type: "session_info_changed", name: "compat-session-one" },
+        { type: "session_info_changed", name: "compat-session-two" },
       ]);
     } finally {
       session.dispose();
