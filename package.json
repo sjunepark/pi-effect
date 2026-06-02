@@ -4,6 +4,7 @@
   "description": "Effect-native adapter around the public pi coding agent SDK.",
   "type": "module",
   "private": true,
+  "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,9 +19,14 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "validate": "bun run typecheck && bun run test && bun run build && bun run secrets",
     "test": "vitest --run",
     "test:real-agent": "vitest --run --config vitest.real-agent.config.ts",
-    "typecheck": "tsc -p tsconfig.test.json"
+    "typecheck": "tsc -p tsconfig.test.json",
+    "secrets": "bun run secrets:history && bun run secrets:worktree",
+    "secrets:history": "gitleaks git . --redact --verbose",
+    "secrets:worktree": "gitleaks dir . --redact --verbose",
+    "secrets:staged": "gitleaks git . --staged --redact --verbose"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.78.0",

@@ -2,6 +2,8 @@
 
 Effect-native adapter around the public [`@earendil-works/pi-coding-agent`](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) SDK.
 
+Licensed under the [MIT License](./LICENSE).
+
 `pi-effect` is intentionally PI SDK-shaped: it re-exports the PI SDK names downstream apps already know, then adds thin Effect companions such as `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`. The wrappers preserve PI objects and result shapes instead of introducing a parallel session/tool/model abstraction.
 
 ## Current status
@@ -84,10 +86,10 @@ Effect failures from tool handlers are rejected as `ToolEffectExecutionError`; d
 
 ```bash
 bun install
-bun run typecheck
-bun run test
-bun run build
+bun run validate
 ```
+
+`bun run validate` typechecks, runs the default test suite, builds the package, and scans repository history plus the working tree with Gitleaks. Use `bun run secrets:staged` before commits to scan only staged changes.
 
 Default tests never require credentials or live provider access.
 

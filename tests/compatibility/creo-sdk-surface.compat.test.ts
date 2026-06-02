@@ -71,11 +71,11 @@ describe("Creo PI SDK import-surface compatibility", () => {
     };
 
     const authStorage = AuthStorage.fromStorage(backend);
-    const credential: AuthCredential = { type: "api_key", key: "sk-creo-test" };
+    const credential: AuthCredential = { type: "api_key", key: "test-api-key" };
     authStorage.set("openai", credential);
 
     expect(authStorage.has("openai")).toBe(true);
-    await expect(authStorage.getApiKey("openai", { includeFallback: false })).resolves.toBe("sk-creo-test");
+    await expect(authStorage.getApiKey("openai", { includeFallback: false })).resolves.toBe("test-api-key");
     expect(authStorage.drainErrors()).toEqual([]);
 
     const agentDir = mkdtempSync(join(tmpdir(), "pi-effect-creo-"));
