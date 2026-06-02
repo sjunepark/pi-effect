@@ -6,6 +6,14 @@ Licensed under the [MIT License](./LICENSE).
 
 `pi-effect` is intentionally PI SDK-shaped: it re-exports the PI SDK names downstream apps already know, then adds thin Effect companions such as `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`. The wrappers preserve PI objects and result shapes instead of introducing a parallel session/tool/model abstraction.
 
+## Boundary policy
+
+`pi-effect` is a compatibility and Effect-semantics boundary, not a second PI SDK. It earns its place when it centralizes PI SDK upgrade risk, preserves a downstream dependency boundary, or adds Effect resource, interruption, stream, Promise-boundary, typed-error, or compatibility-test semantics around public PI APIs.
+
+Keep downstream product policy out of this package. App-specific choices such as credential storage, resource discovery restrictions, workflow/node execution policy, UI diagnostics, and local filesystem permissions belong in the downstream app. `pi-effect` should make public PI APIs safer and more idiomatic to call from Effect programs while keeping PI's own objects, method names, events, and result shapes visible.
+
+Prefer facade exports for direct PI SDK names that downstream apps need, and add Effect-native wrappers only when repeated downstream boilerplate or real boundary semantics justify them. If a proposed wrapper mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, or starts changing for one downstream app's policy, keep it out of `pi-effect`.
+
 ## Current status
 
 Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.0`.

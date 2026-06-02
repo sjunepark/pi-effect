@@ -8,6 +8,22 @@ Wrap public `@earendil-works/pi-coding-agent` APIs first. Do not wrap `@earendil
 
 Keep wrappers shallow and Effect-native. `pi-effect` should make PI easier to use from Effect programs; it should not re-model PI concepts, hide useful PI details, or add app-specific policy.
 
+## Long-Term Boundary Policy
+
+`pi-effect` is an owned boundary around PI SDK compatibility and Effect interop. Its job is to keep downstream apps from spreading PI Promise/callback/session/tool/auth details across their codebases while still exposing PI concepts plainly enough that PI documentation, debugging, and upgrade notes remain useful.
+
+The package is worth maintaining when it does one or more of these jobs:
+
+- centralizes PI SDK version upgrades behind compatibility tests;
+- preserves a single import/dependency boundary for downstream apps;
+- adds Effect resource, interruption, stream, or Promise-boundary semantics;
+- turns public PI failure shapes into conservative typed errors with original causes;
+- removes repeated generic PI/Effect boilerplate that more than one downstream call site would otherwise own.
+
+Do not use `pi-effect` for downstream product policy. Examples that belong downstream include app credential-storage policy, resource-discovery restrictions, workflow or node-execution semantics, local filesystem permission policy, UI copy and diagnostics, provider selection policy, and retry or repair prompts. Those policies may call `pi-effect`, but they should not live here.
+
+A proposed wrapper should be rejected or kept as a facade-only export when it mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, exists for only one app-specific policy, or would make PI SDK debugging harder.
+
 ## Naming and Shape Policy
 
 `pi-effect` should be PI SDK-shaped, Effect-flavored. A user who knows the PI SDK should be able to predict the wrapper surface without learning a parallel vocabulary.
@@ -82,7 +98,14 @@ Every supported wrapper surface needs compatibility coverage against the pinned 
 
 Prefer tests that exercise public `@earendil-works/pi-coding-agent` behavior. Use PI internals only to understand behavior, then pin the public contract with tests.
 
-Import-surface tests may document broader SDK availability for downstream apps, but they do not imply `pi-effect` wraps or owns that whole surface.
+Import-surface tests may document broader SDK availability for downstream apps, but they do not imply `pi-effect` wraps or owns that whole surface. Facade exports are allowed to preserve a downstream dependency boundary, but Effect-native support requires a real wrapper contract and tests.
+
+Upgrade flow:
+
+1. update the pinned PI SDK version in `pi-effect`;
+2. update or add compatibility tests for any public behavior the wrappers rely on;
+3. fix wrapper code while preserving PI shapes and original causes;
+4. let downstream apps upgrade after this package is green.
 
 ## Wrapper Expansion Checklist
 
@@ -90,10 +113,12 @@ Before adding a wrapper, answer:
 
 - Which public PI SDK API is being wrapped?
 - Is the exposed `pi-effect` API Effect-native, Promise-based, or plain data/config?
+- What downstream repetition or boundary semantics justify the wrapper instead of a facade export?
 - What are the success, failure, defect, and interruption semantics?
 - Which original causes or details must remain visible?
 - What typed errors, if any, help callers act on failures?
 - What compatibility test pins the current PI behavior?
 - Is this a generic PI adapter concern, or app-specific policy that belongs downstream?
+- Would this wrapper make PI SDK docs, debugging, or upgrade notes harder to apply?
 
 If the answers are unclear, add compatibility tests or keep the wrapper surface smaller.
