@@ -1,16 +1,16 @@
-# Creo PI API Surface
+# PI Facade API Surface
 
-This file tracks the additional `@earendil-works/pi-coding-agent@0.78.0` APIs that `pi-effect` must expose so Creo can stop importing the PI SDK directly.
+This file tracks the additional `@earendil-works/pi-coding-agent@0.78.0` APIs that `pi-effect` must expose so downstream apps can stop importing the PI SDK directly.
 
-Goal: migrate Creo one API area at a time. Each section should become importable from `pi-effect` with compatibility tests proving it maps to the pinned PI SDK behavior.
+Goal: migrate downstream apps one API area at a time. Each section should become importable from `pi-effect` with compatibility tests proving it maps to the pinned PI SDK behavior.
 
 ## Current status
 
-- `pi-effect` now exposes facade exports for the direct Creo imports listed below.
-- Compatibility coverage: `tests/compatibility/creo-pi-effect-surface.compat.test.ts` imports those APIs from `pi-effect` only and exercises representative manager, session, custom-tool, and builtin-tool behavior against the pinned PI SDK.
-- Remaining work is downstream migration: change Creo imports from `@earendil-works/pi-coding-agent` to `pi-effect` one area at a time, then keep this checklist current.
+- `pi-effect` now exposes facade exports for the direct downstream imports listed below.
+- Compatibility coverage: `tests/compatibility/downstream-pi-effect-surface.compat.test.ts` imports those APIs from `pi-effect` only and exercises representative manager, session, custom-tool, and builtin-tool behavior against the pinned PI SDK.
+- Remaining work is downstream migration: change downstream imports from `@earendil-works/pi-coding-agent` to `pi-effect` one area at a time, then keep this checklist current.
 
-## Current direct Creo imports
+## Current direct downstream imports
 
 ### Session creation and lifecycle
 
@@ -18,7 +18,7 @@ Goal: migrate Creo one API area at a time. Each section should become importable
 - `type AgentSessionEvent`
 - `type SessionEntry`
 
-Creo uses the full session creation options shape, including:
+Downstream usage exercises the full session creation options shape, including:
 
 - `cwd`
 - `agentDir`
@@ -33,7 +33,7 @@ Creo uses the full session creation options shape, including:
 - `model`
 - `thinkingLevel`
 
-Creo also uses the result shape from `createAgentSession`, especially `session`.
+Downstream usage also exercises the result shape from `createAgentSession`, especially `session`.
 
 ## Managers and storage
 
@@ -44,7 +44,7 @@ Creo also uses the result shape from `createAgentSession`, especially `session`.
 - `type AuthStorageBackend`
 - `type AuthCredential`
 
-Creo relies on:
+Downstream usage relies on:
 
 - `AuthStorage.fromStorage(...)`
 - runtime API key overrides via `setRuntimeApiKey(...)`
@@ -58,7 +58,7 @@ Creo relies on:
 
 - `ModelRegistry`
 
-Creo relies on:
+Downstream usage relies on:
 
 - `ModelRegistry.create(authStorage, modelsJsonPath)`
 - `modelRegistry.find(provider, modelId)`
@@ -67,7 +67,7 @@ Creo relies on:
 
 - `SessionManager`
 
-Creo currently relies on:
+Downstream usage currently relies on:
 
 - `SessionManager.inMemory()`
 
@@ -76,7 +76,7 @@ Creo currently relies on:
 - `SettingsManager`
 - `type SettingsManager`
 
-Creo currently relies on:
+Downstream usage currently relies on:
 
 - `SettingsManager.inMemory(settings?)`
 
@@ -85,7 +85,7 @@ Creo currently relies on:
 - `createExtensionRuntime`
 - `type ResourceLoader`
 
-Creo provides a minimal `ResourceLoader` implementation and uses `createExtensionRuntime()` for an empty extension runtime.
+Downstream usage provides a minimal `ResourceLoader` implementation and uses `createExtensionRuntime()` for an empty extension runtime.
 
 ## Tool definitions
 
@@ -95,7 +95,7 @@ Creo provides a minimal `ResourceLoader` implementation and uses `createExtensio
 - `type ToolDefinition`
 - `type AgentToolResult`
 
-Creo uses `defineTool(...)` directly for custom tools and to wrap PI builtin tool definitions with Creo-specific labels, descriptions, snippets, and policy checks.
+Downstream usage exercises `defineTool(...)` directly for custom tools and to wrap PI builtin tool definitions with app-specific labels, descriptions, snippets, and policy checks.
 
 ### Builtin tool-definition factories
 
@@ -124,15 +124,15 @@ Likely useful while wrapping bash:
 
 ## pi-effect additions
 
-The stable facade is available; add Effect-native helpers where repeated Creo usage proves they reduce boilerplate. Effect helpers should keep PI SDK names and shapes visible rather than introducing a parallel pi-effect vocabulary.
+The stable facade is available; add Effect-native helpers where repeated downstream usage proves they reduce boilerplate. Effect helpers should keep PI SDK names and shapes visible rather than introducing a parallel pi-effect vocabulary.
 
 ### 1. SDK facade exports — complete
 
-Creo-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
+Downstream-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
 
 ### 2. Effect-native convenience wrappers
 
-After direct facade compatibility is covered, add wrappers where they reduce Creo-owned boilerplate:
+After direct facade compatibility is covered, add wrappers where they reduce downstream-owned boilerplate:
 
 - auth storage creation from a custom backend
 - model lookup with typed not-found errors
@@ -142,7 +142,7 @@ After direct facade compatibility is covered, add wrappers where they reduce Cre
 
 ### 3. Compatibility tests — complete
 
-Compatibility tests import only from `pi-effect` and mirror Creo usage:
+Compatibility tests import only from `pi-effect` and mirror downstream usage:
 
 - auth backend + `AuthStorage.fromStorage(...)`
 - `ModelRegistry.create(...).find(...)`
@@ -159,4 +159,4 @@ For each section:
 - [x] Add or update compatibility tests against the pinned PI SDK.
 - [x] Update README usage/status.
 - [x] Update this file with migration notes or mark complete.
-- [ ] Change Creo imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect`.
+- [ ] Change downstream imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect`.

@@ -22,8 +22,8 @@ Implemented:
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
 - opt-in real-agent smoke tests for live wrapper wiring
-- facade exports for the public PI SDK APIs Creo currently imports directly
-- a Creo import-surface sentinel covering the upstream PI SDK exports Creo currently uses directly
+- facade exports for the public PI SDK APIs downstream apps may import directly
+- a downstream import-surface sentinel covering the upstream PI SDK exports downstream apps may use directly
 
 Not implemented yet:
 
@@ -135,7 +135,7 @@ Currently supported adapter surface:
 - `ModelRegistry.find(...)` for typed model lookup
 - public session events consumed through `AgentSession.subscribe(...)`
 
-The suite also has a shallow Creo import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct Creo imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
+The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct downstream imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
 Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 

@@ -33,7 +33,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-const creoRuntimeExports = [
+const downstreamRuntimeExports = [
   "AuthStorage",
   "ModelRegistry",
   "SessionManager",
@@ -50,16 +50,16 @@ const creoRuntimeExports = [
   "defineTool",
 ] as const;
 
-describe("Creo PI SDK import-surface compatibility", () => {
-  it("keeps every Creo-used root runtime export importable from the pinned SDK", async () => {
+describe("Downstream PI SDK import-surface compatibility", () => {
+  it("keeps every downstream-required root runtime export importable from the pinned SDK", async () => {
     const sdk = await import("@earendil-works/pi-coding-agent");
 
-    for (const exportName of creoRuntimeExports) {
+    for (const exportName of downstreamRuntimeExports) {
       expect(sdk[exportName]).toBeDefined();
     }
   });
 
-  it("supports Creo-style protected AuthStorage backends and ModelRegistry lookup", async () => {
+  it("supports downstream-style protected AuthStorage backends and ModelRegistry lookup", async () => {
     let storedPayload: string | undefined;
     const applyLockResult = <T>(lockResult: { readonly result: T; readonly next?: string }) => {
       if ("next" in lockResult) storedPayload = lockResult.next;
@@ -78,7 +78,7 @@ describe("Creo PI SDK import-surface compatibility", () => {
     await expect(authStorage.getApiKey("openai", { includeFallback: false })).resolves.toBe("test-api-key");
     expect(authStorage.drainErrors()).toEqual([]);
 
-    const agentDir = mkdtempSync(join(tmpdir(), "pi-effect-creo-"));
+    const agentDir = mkdtempSync(join(tmpdir(), "pi-effect-downstream-"));
     try {
       const modelRegistry = ModelRegistry.create(authStorage, join(agentDir, "models.json"));
       expect(modelRegistry.find("openai", "gpt-5")).toBeDefined();
@@ -87,7 +87,7 @@ describe("Creo PI SDK import-surface compatibility", () => {
     }
   });
 
-  it("accepts Creo's minimal ResourceLoader and createAgentSession options", async () => {
+  it("accepts downstream-style minimal ResourceLoader and createAgentSession options", async () => {
     const resourceLoader: ResourceLoader = {
       getExtensions: () => ({ extensions: [], errors: [], runtime: createExtensionRuntime() }),
       getSkills: () => ({ skills: [], diagnostics: [] }),
@@ -100,9 +100,9 @@ describe("Creo PI SDK import-surface compatibility", () => {
       reload: async () => undefined,
     };
     const customTool = defineTool({
-      name: "creo_echo",
-      label: "Creo Echo",
-      description: "Echoes text for Creo compatibility tests",
+      name: "downstream_echo",
+      label: "Downstream Echo",
+      description: "Echoes text for downstream compatibility tests",
       parameters: Type.Object({ text: Type.String() }),
       execute: async (_toolCallId, params): Promise<AgentToolResult<{ readonly text: string }>> => ({
         content: [{ type: "text", text: params.text }],
@@ -110,7 +110,7 @@ describe("Creo PI SDK import-surface compatibility", () => {
       }),
     });
 
-    const agentDir = mkdtempSync(join(tmpdir(), "pi-effect-creo-session-"));
+    const agentDir = mkdtempSync(join(tmpdir(), "pi-effect-downstream-session-"));
     const result = await createAgentSession({
       cwd: process.cwd(),
       agentDir,
@@ -118,17 +118,17 @@ describe("Creo PI SDK import-surface compatibility", () => {
       sessionManager: SessionManager.inMemory(),
       settingsManager: SettingsManager.inMemory(),
       customTools: [customTool],
-      tools: ["creo_echo"],
+      tools: ["downstream_echo"],
       noTools: "builtin",
     });
 
     try {
-      type CreoSession = Awaited<ReturnType<typeof createAgentSession>>["session"];
-      const session: CreoSession = result.session;
+      type DownstreamSession = Awaited<ReturnType<typeof createAgentSession>>["session"];
+      const session: DownstreamSession = result.session;
       const entries: SessionEntry[] = SessionManager.inMemory().getEntries();
       const eventSink = (_event: AgentSessionEvent) => undefined;
 
-      expect(session.getToolDefinition("creo_echo")).toBeDefined();
+      expect(session.getToolDefinition("downstream_echo")).toBeDefined();
       expect(entries).toEqual([]);
       expect(eventSink).toBeTypeOf("function");
     } finally {
@@ -137,10 +137,10 @@ describe("Creo PI SDK import-surface compatibility", () => {
     }
   });
 
-  it("keeps Creo's builtin tool-definition factory and operation contracts type-compatible", async () => {
+  it("keeps downstream builtin tool-definition factory and operation contracts type-compatible", async () => {
     const readOperations: ReadOperations = {
       access: async () => undefined,
-      readFile: async () => Buffer.from("creo read fixture"),
+      readFile: async () => Buffer.from("downstream read fixture"),
     };
     const lsOperations: LsOperations = {
       exists: async () => true,
@@ -174,7 +174,7 @@ describe("Creo PI SDK import-surface compatibility", () => {
       defineTool(createWriteToolDefinition(process.cwd(), { operations: writeOperations })),
       defineTool(
         createBashToolDefinition(process.cwd(), {
-          spawnHook: (context) => ({ ...context, env: { ...context.env, CREO_COMPAT: "1" } }),
+          spawnHook: (context) => ({ ...context, env: { ...context.env, DOWNSTREAM_COMPAT: "1" } }),
         }),
       ),
     ];
@@ -192,7 +192,7 @@ describe("Creo PI SDK import-surface compatibility", () => {
     await expect(
       definitions[0]?.execute("call-1", { path: "README.md" }, undefined, undefined, {} as never),
     ).resolves.toMatchObject({
-      content: [{ type: "text", text: "creo read fixture" }],
+      content: [{ type: "text", text: "downstream read fixture" }],
     });
   });
 });

@@ -46,7 +46,7 @@ const createMinimalResourceLoader = (): ResourceLoader => ({
   reload: async () => undefined,
 });
 
-describe("Creo pi-effect API surface compatibility", () => {
+describe("Downstream pi-effect API surface compatibility", () => {
   it("exposes manager and storage facade APIs from pi-effect", async () => {
     let storedAuth: string | undefined;
     const backend: AuthStorageBackend = {
