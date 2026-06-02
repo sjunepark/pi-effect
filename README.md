@@ -84,6 +84,14 @@ Effect failures from tool handlers are rejected as `ToolEffectExecutionError`; d
 
 ## Development
 
+Prerequisites: Node `>=22.19.0`, Bun, and the [Gitleaks CLI](https://github.com/gitleaks/gitleaks) for local secret scans. On macOS, install Gitleaks with:
+
+```bash
+brew install gitleaks
+```
+
+Then run the local validation pass:
+
 ```bash
 bun install
 bun run validate
