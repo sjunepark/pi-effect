@@ -32,6 +32,7 @@ Implemented:
 - compatibility tests for the pinned adapter-relevant PI SDK surface
 - opt-in real-agent smoke tests for live wrapper wiring
 - facade exports for the public PI SDK APIs downstream apps may import directly
+- a facade-only `pi-effect/sdk` subpath for downstream apps that want the PI SDK-shaped boundary without importing Effect wrapper modules
 - a downstream import-surface sentinel covering the upstream PI SDK exports downstream apps may use directly
 
 Not implemented yet:
@@ -41,6 +42,18 @@ Not implemented yet:
 - deeper PI error classification beyond conservative wrapper errors
 
 ## Usage
+
+### PI SDK compatibility facade
+
+Downstream apps that only need the PI SDK-shaped compatibility boundary should import direct PI SDK names from `pi-effect/sdk`:
+
+```ts
+import { AuthStorage, createAgentSession, defineTool } from "pi-effect/sdk";
+```
+
+The root `pi-effect` entry remains compatible and still re-exports the same facade names, but it also exports the Effect-native wrappers. Use `pi-effect/sdk` when you want to avoid loading wrapper modules that import `effect`.
+
+### Effect wrappers
 
 ```ts
 import { Effect } from "effect";
@@ -145,7 +158,7 @@ Currently supported adapter surface:
 - `AuthStorage.getApiKey(...)`, `login(...)`, `set(...)`, `remove(...)`, `reload()`, and `drainErrors()` for typed auth and credential-persistence boundaries. Write helpers surface PI-recorded persistence errors while preserving PI's non-transactional in-memory state semantics.
 - public session events consumed through `AgentSession.subscribe(...)`
 
-The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct downstream imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
+The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, a `pi-effect` root facade compatibility test for backwards compatibility, and a `pi-effect/sdk` subpath sentinel proving the facade-only entry stays separate from Effect wrapper modules. The direct downstream facade imports are: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
 Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 

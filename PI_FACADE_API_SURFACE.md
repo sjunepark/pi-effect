@@ -6,9 +6,10 @@ Goal: migrate downstream apps one API area at a time. Each section should become
 
 ## Current status
 
-- `pi-effect` now exposes facade exports for the direct downstream imports listed below.
-- Compatibility coverage: `tests/compatibility/downstream-pi-effect-surface.compat.test.ts` imports those APIs from `pi-effect` only and exercises representative manager, session, custom-tool, and builtin-tool behavior against the pinned PI SDK.
-- Remaining work is downstream migration: change downstream imports from `@earendil-works/pi-coding-agent` to `pi-effect` one area at a time, then keep this checklist current.
+- `pi-effect/sdk` is the recommended facade-only import path for the direct downstream imports listed below.
+- The root `pi-effect` entry remains backwards compatible and still re-exports those facade names, but it also exports Effect-native wrappers.
+- Compatibility coverage: `tests/compatibility/downstream-pi-effect-surface.compat.test.ts` imports those APIs from the root `pi-effect` entry for backwards compatibility, while `tests/compatibility/sdk-subpath.compat.test.ts` verifies the facade-only subpath export and checks that `src/sdk.ts` does not import Effect wrapper modules.
+- Remaining work is downstream migration: change downstream imports from `@earendil-works/pi-coding-agent` to `pi-effect/sdk` one area at a time, then keep this checklist current.
 
 ## Current direct downstream imports
 
@@ -128,7 +129,7 @@ The stable facade is available; add Effect-native helpers where repeated downstr
 
 ### 1. SDK facade exports — complete
 
-Downstream-needed public PI SDK values and types are exposed from the `pi-effect` root so the dependency boundary is clear. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
+Downstream-needed public PI SDK values and types are exposed from the facade-only `pi-effect/sdk` subpath so the dependency boundary is clear. The root `pi-effect` entry also re-exports those names for compatibility, but downstream apps that do not need Effect wrappers should prefer `pi-effect/sdk`. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
 
 ### 2. Effect-native convenience wrappers
 
@@ -159,8 +160,8 @@ Compatibility tests import only from `pi-effect` and mirror downstream usage:
 
 For each section:
 
-- [x] Expose from `pi-effect` root or documented submodule.
+- [x] Expose from `pi-effect/sdk` facade-only subpath, with root `pi-effect` compatibility preserved.
 - [x] Add or update compatibility tests against the pinned PI SDK.
 - [x] Update README usage/status.
 - [x] Update this file with migration notes or mark complete.
-- [ ] Change downstream imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect`.
+- [ ] Change downstream imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect/sdk`.
