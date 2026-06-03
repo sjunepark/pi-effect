@@ -6,6 +6,7 @@ import {
   AuthStorageEffectError,
   type AuthStorageLike,
   type AuthStorageLoginCallbacks,
+  type AuthStorageLoginProviderId,
 } from "../../src/index.js";
 
 const loginCallbacks = {} as AuthStorageLoginCallbacks;
@@ -22,7 +23,7 @@ class FakeAuthStorage implements AuthStorageLike {
     return this.getApiKeyMock(providerId, options);
   }
 
-  async login(providerId: string, callbacks: AuthStorageLoginCallbacks) {
+  async login(providerId: AuthStorageLoginProviderId, callbacks: AuthStorageLoginCallbacks) {
     return this.loginMock(providerId, callbacks);
   }
 

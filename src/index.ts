@@ -68,6 +68,7 @@ export type {
   AuthStorageLike,
   AuthStorageLoginCallbacks,
   AuthStorageLoginError,
+  AuthStorageLoginProviderId,
   AuthStorageRequiredApiKeyError,
   AuthStorageWriteError,
 } from "./auth/AuthStorageEffect.js";

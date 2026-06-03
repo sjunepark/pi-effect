@@ -6,12 +6,13 @@ import {
 } from "../session/AgentSessionEffectError.js";
 
 export type AuthStorageGetApiKeyOptions = Parameters<AuthStorage["getApiKey"]>[1];
+export type AuthStorageLoginProviderId = Parameters<AuthStorage["login"]>[0];
 export type AuthStorageLoginCallbacks = Parameters<AuthStorage["login"]>[1];
 
 /** Structural subset of PI SDK `AuthStorage` used by Effect helpers and tests. */
 export interface AuthStorageLike {
   getApiKey(providerId: string, options?: AuthStorageGetApiKeyOptions): Promise<string | undefined>;
-  login(providerId: string, callbacks: AuthStorageLoginCallbacks): Promise<void>;
+  login(providerId: AuthStorageLoginProviderId, callbacks: AuthStorageLoginCallbacks): Promise<void>;
   set(provider: string, credential: AuthCredential): void;
   remove(provider: string): void;
   reload(): void;
@@ -97,7 +98,7 @@ export const requireApiKey = (
  */
 export const login = (
   authStorage: AuthStorageLike | AuthStorage,
-  providerId: string,
+  providerId: AuthStorageLoginProviderId,
   callbacks: AuthStorageLoginCallbacks,
 ): Effect.Effect<void, AuthStorageLoginError> =>
   Effect.tryPromise({

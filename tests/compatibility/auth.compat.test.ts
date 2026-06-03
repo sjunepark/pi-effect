@@ -7,9 +7,11 @@ import {
   AuthStorageEffectError,
   type AuthStorageBackend,
   type AuthStorageLoginCallbacks,
+  type AuthStorageLoginProviderId,
 } from "../../src/index.js";
 
 const loginCallbacks = {} as AuthStorageLoginCallbacks;
+const unknownOAuthProvider = "pi-effect-unknown-oauth-provider" as unknown as AuthStorageLoginProviderId;
 
 class RejectWritesBackend implements AuthStorageBackend {
   private current = "{}";
@@ -67,7 +69,7 @@ describe("PI AuthStorage compatibility", () => {
     const authStorage = AuthStorage.inMemory();
 
     const result = await Effect.runPromise(
-      AuthStorageEffect.login(authStorage, "pi-effect-unknown-oauth-provider", loginCallbacks).pipe(Effect.either),
+      AuthStorageEffect.login(authStorage, unknownOAuthProvider, loginCallbacks).pipe(Effect.either),
     );
 
     expect(Either.isLeft(result)).toBe(true);
