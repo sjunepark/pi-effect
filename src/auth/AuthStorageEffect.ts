@@ -109,6 +109,11 @@ export const login = (
 /**
  * Effect wrapper around PI SDK `AuthStorage.set(...)` that treats recorded
  * persistence errors as part of the write boundary.
+ *
+ * This preserves PI's non-transactional state semantics: PI mutates its
+ * in-memory credential map before attempting backend persistence. A failure
+ * from this helper means persistence failed or PI recorded a storage error; it
+ * does not mean the in-memory credential update was rolled back.
  */
 export const set = (
   authStorage: AuthStorageLike | AuthStorage,
@@ -123,6 +128,11 @@ export const set = (
 /**
  * Effect wrapper around PI SDK `AuthStorage.remove(...)` that treats recorded
  * persistence errors as part of the write boundary.
+ *
+ * This preserves PI's non-transactional state semantics: PI mutates its
+ * in-memory credential map before attempting backend persistence. A failure
+ * from this helper means persistence failed or PI recorded a storage error; it
+ * does not mean the in-memory credential removal was rolled back.
  */
 export const remove = (
   authStorage: AuthStorageLike | AuthStorage,
@@ -133,7 +143,13 @@ export const remove = (
     catch: (cause) => new AuthStorageEffectError({ cause }),
   }).pipe(Effect.flatMap(() => failOnRecordedErrors(authStorage, `remove credentials for ${provider}`)));
 
-/** Effect wrapper around PI SDK `AuthStorage.reload()` plus `drainErrors()`. */
+/**
+ * Effect wrapper around PI SDK `AuthStorage.reload()` plus `drainErrors()`.
+ *
+ * This reports PI-recorded reload/storage errors without adding rollback or
+ * repair policy. Callers that need stronger credential consistency guarantees
+ * should own that policy downstream.
+ */
 export const reload = (authStorage: AuthStorageLike | AuthStorage): Effect.Effect<void, AuthStorageWriteError> =>
   Effect.try({
     try: () => authStorage.reload(),

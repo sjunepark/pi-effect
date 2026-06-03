@@ -142,7 +142,7 @@ Currently supported adapter surface:
 - `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
 - `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
 - `ModelRegistry.find(...)` for typed model lookup
-- `AuthStorage.getApiKey(...)`, `login(...)`, `set(...)`, `remove(...)`, `reload()`, and `drainErrors()` for typed auth and credential-persistence boundaries
+- `AuthStorage.getApiKey(...)`, `login(...)`, `set(...)`, `remove(...)`, `reload()`, and `drainErrors()` for typed auth and credential-persistence boundaries. Write helpers surface PI-recorded persistence errors while preserving PI's non-transactional in-memory state semantics.
 - public session events consumed through `AgentSession.subscribe(...)`
 
 The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct downstream imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
