@@ -132,10 +132,13 @@ Downstream-needed public PI SDK values and types are exposed from the `pi-effect
 
 ### 2. Effect-native convenience wrappers
 
-After direct facade compatibility is covered, add wrappers where they reduce downstream-owned boilerplate:
+After direct facade compatibility is covered, add wrappers where repeated downstream boilerplate or real boundary semantics justify them. Current supported helpers:
 
-- auth storage creation from a custom backend
 - model lookup with typed not-found errors
+- auth API-key lookup, required-key lookup, login, credential writes, reload, and error draining with typed auth/storage boundary errors
+
+Remaining candidates require explicit justification before implementation:
+
 - static/minimal resource loader creation
 - in-memory session/settings manager creation
 - built-in tool definition creation with operation injection
@@ -145,6 +148,7 @@ After direct facade compatibility is covered, add wrappers where they reduce dow
 Compatibility tests import only from `pi-effect` and mirror downstream usage:
 
 - auth backend + `AuthStorage.fromStorage(...)`
+- `AuthStorageEffect.getApiKey(...)`, `requireApiKey(...)`, `login(...)`, and write-error handling
 - `ModelRegistry.create(...).find(...)`
 - minimal `ResourceLoader` + `createAgentSession(...)`
 - `SessionManager.inMemory()` and `SettingsManager.inMemory(...)`

@@ -49,6 +49,7 @@ export {
   AgentSessionEventStreamError,
   AgentSessionPromptError,
   AgentSessionPromptRejectedError,
+  AuthStorageApiKeyNotFoundError,
   AuthStorageEffectError,
   CreateAgentSessionError,
   ModelRegistryModelNotFoundError,
@@ -60,6 +61,16 @@ export { createAgentSessionEffect, createAgentSessionEffectFrom } from "./sessio
 export type { AgentSessionPromptFailure } from "./session/AgentSessionPromptEffect.js";
 export { AgentSessionEventStream } from "./session/AgentSessionEventStream.js";
 export type { AgentSessionEventStreamOptions } from "./session/AgentSessionEventStream.js";
+export { AuthStorageEffect } from "./auth/AuthStorageEffect.js";
+export type {
+  AuthStorageApiKeyLookupError,
+  AuthStorageGetApiKeyOptions,
+  AuthStorageLike,
+  AuthStorageLoginCallbacks,
+  AuthStorageLoginError,
+  AuthStorageRequiredApiKeyError,
+  AuthStorageWriteError,
+} from "./auth/AuthStorageEffect.js";
 export { defineToolEffect } from "./tools/defineToolEffect.js";
 export type {
   DefineToolEffectConfig,

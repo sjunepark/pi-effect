@@ -87,11 +87,23 @@ export class ModelRegistryModelNotFoundError extends Data.TaggedError(
   }
 }
 
-/** Reserved typed auth boundary for future Effect wrappers around PI SDK AuthStorage behavior. */
+/** Failure raised when an Effect wrapper around PI SDK `AuthStorage` behavior crosses auth or storage errors. */
 export class AuthStorageEffectError extends Data.TaggedError("AuthStorageEffectError")<PiSdkEffectErrorData> {
   constructor(options: PiSdkEffectErrorOptions = {}) {
     super({
       message: options.message ?? messageFromCause(options.cause, "PI authentication failed"),
+      cause: options.cause,
+    });
+  }
+}
+
+/** Failure raised when `AuthStorageEffect.requireApiKey(...)` cannot resolve credentials for a provider. */
+export class AuthStorageApiKeyNotFoundError extends Data.TaggedError(
+  "AuthStorageApiKeyNotFoundError",
+)<PiSdkEffectErrorData> {
+  constructor(options: PiSdkEffectErrorOptions = {}) {
+    super({
+      message: options.message ?? messageFromCause(options.cause, "PI API key was not found"),
       cause: options.cause,
     });
   }
@@ -117,6 +129,7 @@ export type PiSdkEffectError =
   | AgentSessionEventStreamError
   | ModelRegistryModelNotFoundError
   | AuthStorageEffectError
+  | AuthStorageApiKeyNotFoundError
   | SettingsManagerPersistenceError
   | UnknownPiSdkError;
 

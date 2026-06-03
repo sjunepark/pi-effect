@@ -26,6 +26,7 @@ Implemented:
 - Effect handler adapter for PI `defineTool(...)` via `defineToolEffect(...)`
 - settings `flush()` helper through `SettingsManagerEffect.flush(...)`, failing on recorded persistence errors
 - model lookup helper through `ModelRegistryEffect.find(...)`, with typed missing-model errors
+- auth lookup, required-key, login, and write helpers through `AuthStorageEffect`, preserving PI shapes while failing on typed auth/storage boundary errors
 - conservative typed wrapper errors with original causes preserved
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
@@ -35,7 +36,7 @@ Implemented:
 
 Not implemented yet:
 
-- auth/resource-loader helpers
+- resource-loader helpers
 - broader Effect-native PI SDK wrappers outside the current adapter contract
 - deeper PI error classification beyond conservative wrapper errors
 
@@ -141,6 +142,7 @@ Currently supported adapter surface:
 - `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
 - `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
 - `ModelRegistry.find(...)` for typed model lookup
+- `AuthStorage.getApiKey(...)`, `login(...)`, `set(...)`, `remove(...)`, `reload()`, and `drainErrors()` for typed auth and credential-persistence boundaries
 - public session events consumed through `AgentSession.subscribe(...)`
 
 The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, plus a `pi-effect` facade compatibility test for the direct downstream imports: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
