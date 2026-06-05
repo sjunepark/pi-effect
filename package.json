@@ -33,7 +33,7 @@
     "secrets:staged": "gitleaks git . --staged --redact --verbose"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "0.78.0",
+    "@earendil-works/pi-coding-agent": "0.78.1",
     "effect": "^3.19.6",
     "typebox": "1.1.38"
   },
