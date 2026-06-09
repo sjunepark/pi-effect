@@ -4,7 +4,7 @@ Effect-native adapter around the public [`@earendil-works/pi-coding-agent`](http
 
 Licensed under the [MIT License](./LICENSE).
 
-`pi-effect` is intentionally PI SDK-shaped: it re-exports the PI SDK names downstream apps already know, then adds thin Effect companions such as `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`. The wrappers preserve PI objects and result shapes instead of introducing a parallel session/tool/model abstraction.
+`pi-effect` is intentionally PI SDK-shaped but keeps its import boundary explicit: the root entry exports thin Effect companions such as `createAgentSessionEffect`, `AgentSessionEffect`, `defineToolEffect`, `SettingsManagerEffect`, and `ModelRegistryEffect`, while raw PI SDK facades live under the `pi-effect/raw` escape hatch. The wrappers preserve PI objects and result shapes instead of introducing a parallel session/tool/model abstraction.
 
 ## Boundary policy
 
@@ -12,7 +12,7 @@ Licensed under the [MIT License](./LICENSE).
 
 Keep downstream product policy out of this package. App-specific choices such as credential storage, resource discovery restrictions, workflow/node execution policy, UI diagnostics, and local filesystem permissions belong in the downstream app. `pi-effect` should make public PI APIs safer and more idiomatic to call from Effect programs while keeping PI's own objects, method names, events, and result shapes visible.
 
-Prefer facade exports for direct PI SDK names that downstream apps need, and add Effect-native wrappers only when repeated downstream boilerplate or real boundary semantics justify them. If a proposed wrapper mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, or starts changing for one downstream app's policy, keep it out of `pi-effect`.
+Prefer the `pi-effect/raw` subpath for direct PI SDK names that downstream apps need, and add root Effect-native wrappers only when repeated downstream boilerplate or real boundary semantics justify them. If a proposed wrapper mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, or starts changing for one downstream app's policy, keep it out of the root Effect surface.
 
 ## Current status
 
@@ -31,9 +31,10 @@ Implemented:
 - fake session fixtures for unit tests
 - compatibility tests for the pinned adapter-relevant PI SDK surface
 - opt-in real-agent smoke tests for live wrapper wiring
-- facade exports for the public PI SDK APIs downstream apps may import directly
-- a facade-only `pi-effect/sdk` subpath for downstream apps that want the PI SDK-shaped boundary without importing Effect wrapper modules
-- a downstream import-surface sentinel covering the upstream PI SDK exports downstream apps may use directly
+- facade exports for the public PI SDK APIs downstream apps may import directly from `pi-effect/raw`
+- a facade-only `pi-effect/raw` subpath for downstream apps that want the PI SDK-shaped boundary without importing Effect wrapper modules
+- a root `pi-effect` entry that intentionally omits raw PI SDK facade exports once an explicit raw escape hatch exists
+- a downstream import-surface sentinel covering the raw PI facade exports downstream apps may use through `pi-effect/raw`
 
 Not implemented yet:
 
@@ -45,13 +46,13 @@ Not implemented yet:
 
 ### PI SDK compatibility facade
 
-Downstream apps that only need the PI SDK-shaped compatibility boundary should import direct PI SDK names from `pi-effect/sdk`:
+Downstream apps that only need the PI SDK-shaped compatibility boundary should import direct PI SDK names from `pi-effect/raw`:
 
 ```ts
-import { AuthStorage, createAgentSession, defineTool } from "pi-effect/sdk";
+import { AuthStorage, createAgentSession, defineTool } from "pi-effect/raw";
 ```
 
-The root `pi-effect` entry remains compatible and still re-exports the same facade names, but it also exports the Effect-native wrappers. Use `pi-effect/sdk` when you want to avoid loading wrapper modules that import `effect`.
+The root `pi-effect` entry does not re-export these raw facade names. Use `pi-effect` for Effect wrappers, and use `pi-effect/raw` only when you intentionally need the raw PI SDK-shaped escape hatch.
 
 ### Effect wrappers
 
@@ -158,7 +159,7 @@ Currently supported adapter surface:
 - `AuthStorage.getApiKey(...)`, `login(...)`, `set(...)`, `remove(...)`, `reload()`, and `drainErrors()` for typed auth and credential-persistence boundaries. Write helpers surface PI-recorded persistence errors while preserving PI's non-transactional in-memory state semantics.
 - public session events consumed through `AgentSession.subscribe(...)`
 
-The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, a `pi-effect` root facade compatibility test for backwards compatibility, and a `pi-effect/sdk` subpath sentinel proving the facade-only entry stays separate from Effect wrapper modules. The direct downstream facade imports are: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
+The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, a root `pi-effect` boundary test proving raw facade names stay out of the Effect entry, and a `pi-effect/raw` subpath sentinel proving the facade-only entry stays separate from Effect wrapper modules. The direct downstream facade imports available from `pi-effect/raw` are: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
 Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 

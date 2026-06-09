@@ -1,15 +1,13 @@
 import { Effect, Either } from "effect";
 import { describe, expect, it } from "vitest";
 import {
-  AuthStorage,
   AuthStorageApiKeyNotFoundError,
   AuthStorageEffect,
   AuthStorageEffectError,
-  type AuthCredential,
-  type AuthStorageBackend,
   type AuthStorageLoginCallbacks,
   type AuthStorageLoginProviderId,
 } from "../../src/index.js";
+import { AuthStorage, type AuthCredential, type AuthStorageBackend } from "../../src/raw.js";
 
 const loginCallbacks = {} as AuthStorageLoginCallbacks;
 const unknownOAuthProvider = "pi-effect-unknown-oauth-provider" as unknown as AuthStorageLoginProviderId;

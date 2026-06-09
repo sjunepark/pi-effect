@@ -2,14 +2,14 @@
 
 This file tracks the additional `@earendil-works/pi-coding-agent@0.78.0` APIs that `pi-effect` must expose so downstream apps can stop importing the PI SDK directly.
 
-Goal: migrate downstream apps one API area at a time. Each section should become importable from `pi-effect` with compatibility tests proving it maps to the pinned PI SDK behavior.
+Goal: migrate downstream apps one API area at a time. Raw PI SDK facades should become importable from `pi-effect/raw`, while Effect-native wrappers remain on the root `pi-effect` entry; compatibility tests should prove both surfaces map to the pinned PI SDK behavior.
 
 ## Current status
 
-- `pi-effect/sdk` is the recommended facade-only import path for the direct downstream imports listed below.
-- The root `pi-effect` entry remains backwards compatible and still re-exports those facade names, but it also exports Effect-native wrappers.
-- Compatibility coverage: `tests/compatibility/downstream-pi-effect-surface.compat.test.ts` imports those APIs from the root `pi-effect` entry for backwards compatibility, while `tests/compatibility/sdk-subpath.compat.test.ts` verifies the facade-only subpath export and checks that `src/sdk.ts` does not import Effect wrapper modules.
-- Remaining work is downstream migration: change downstream imports from `@earendil-works/pi-coding-agent` to `pi-effect/sdk` one area at a time, then keep this checklist current.
+- `pi-effect/raw` is the facade-only import path for the direct downstream imports listed below.
+- The root `pi-effect` entry intentionally omits raw PI SDK facade exports; it is for Effect wrappers, wrapper errors, structural wrapper types, and testing helpers.
+- Compatibility coverage: `tests/compatibility/downstream-raw-surface.compat.test.ts` exercises downstream-style imports from `src/raw.ts`, `tests/compatibility/downstream-pi-effect-surface.compat.test.ts` verifies raw facade names stay out of the root Effect entry, and `tests/compatibility/raw-subpath.compat.test.ts` checks that `src/raw.ts` does not import Effect wrapper modules.
+- Remaining work is downstream migration: change downstream imports from `@earendil-works/pi-coding-agent` to `pi-effect/raw` one area at a time, then keep this checklist current.
 
 ## Current direct downstream imports
 
@@ -127,9 +127,9 @@ Likely useful while wrapping bash:
 
 The stable facade is available; add Effect-native helpers where repeated downstream usage proves they reduce boilerplate. Effect helpers should keep PI SDK names and shapes visible rather than introducing a parallel pi-effect vocabulary.
 
-### 1. SDK facade exports — complete
+### 1. Raw facade exports — complete
 
-Downstream-needed public PI SDK values and types are exposed from the facade-only `pi-effect/sdk` subpath so the dependency boundary is clear. The root `pi-effect` entry also re-exports those names for compatibility, but downstream apps that do not need Effect wrappers should prefer `pi-effect/sdk`. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
+Downstream-needed public PI SDK values and types are exposed from the facade-only `pi-effect/raw` subpath so the dependency boundary is clear. The root `pi-effect` entry does not re-export those raw facades; downstream apps that need direct PI SDK names should import them from `pi-effect/raw`. The model lookup helper lives in `src/model/ModelRegistryEffect.ts`.
 
 ### 2. Effect-native convenience wrappers
 
@@ -146,7 +146,7 @@ Remaining candidates require explicit justification before implementation:
 
 ### 3. Compatibility tests — complete
 
-Compatibility tests import only from `pi-effect` and mirror downstream usage:
+Compatibility tests import raw facade APIs from `pi-effect/raw` and Effect wrappers from `pi-effect`, mirroring the intended downstream boundary:
 
 - auth backend + `AuthStorage.fromStorage(...)`
 - `AuthStorageEffect.getApiKey(...)`, `requireApiKey(...)`, `login(...)`, and write-error handling
@@ -160,8 +160,8 @@ Compatibility tests import only from `pi-effect` and mirror downstream usage:
 
 For each section:
 
-- [x] Expose from `pi-effect/sdk` facade-only subpath, with root `pi-effect` compatibility preserved.
+- [x] Expose from the `pi-effect/raw` facade-only subpath, with raw facades intentionally absent from root `pi-effect`.
 - [x] Add or update compatibility tests against the pinned PI SDK.
 - [x] Update README usage/status.
 - [x] Update this file with migration notes or mark complete.
-- [ ] Change downstream imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect/sdk`.
+- [ ] Change downstream imports for that section from `@earendil-works/pi-coding-agent` to `pi-effect/raw`.

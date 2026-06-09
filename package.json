@@ -10,9 +10,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./sdk": {
-      "types": "./dist/sdk.d.ts",
-      "import": "./dist/sdk.js"
+    "./raw": {
+      "types": "./dist/raw.d.ts",
+      "import": "./dist/raw.js"
     }
   },
   "files": [

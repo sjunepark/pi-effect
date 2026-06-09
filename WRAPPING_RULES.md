@@ -22,7 +22,7 @@ The package is worth maintaining when it does one or more of these jobs:
 
 Do not use `pi-effect` for downstream product policy. Examples that belong downstream include app credential-storage policy, resource-discovery restrictions, workflow or node-execution semantics, local filesystem permission policy, UI copy and diagnostics, provider selection policy, and retry or repair prompts. Those policies may call `pi-effect`, but they should not live here.
 
-A proposed wrapper should be rejected or kept as a facade-only export when it mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, exists for only one app-specific policy, or would make PI SDK debugging harder.
+A proposed wrapper should be rejected or kept as a `pi-effect/raw` facade-only export when it mostly renames PI concepts, hides useful PI details, lacks compatibility coverage, exists for only one app-specific policy, or would make PI SDK debugging harder.
 
 ## Naming and Shape Policy
 
@@ -30,7 +30,7 @@ A proposed wrapper should be rejected or kept as a facade-only export when it mo
 
 Rules:
 
-- Re-export original PI SDK values and types under their original names when exposing facade APIs.
+- Re-export original PI SDK values and types under their original names only from facade APIs such as `pi-effect/raw`; keep raw facades out of the root `pi-effect` Effect surface.
 - Name Effect wrappers by preserving the original PI SDK concept or function name and adding `Effect` where a distinction is needed: `createAgentSessionEffect`, `defineToolEffect`, `AgentSessionEffect`, `SettingsManagerEffect`, `ModelRegistryEffect`.
 - Preserve original PI result and object shapes unless changing the shape is the point of the wrapper. Example: `createAgentSessionEffect(...)` returns PI's `CreateAgentSessionResult`, not just the nested session.
 - Prefer wrapper namespaces around PI concepts over invented service names. Example: use `AgentSessionEffect.prompt(session, ...)` instead of a separate prompt service that hides `AgentSession.prompt(...)`.
@@ -98,7 +98,7 @@ Every supported wrapper surface needs compatibility coverage against the pinned 
 
 Prefer tests that exercise public `@earendil-works/pi-coding-agent` behavior. Use PI internals only to understand behavior, then pin the public contract with tests.
 
-Import-surface tests may document broader SDK availability for downstream apps, but they do not imply `pi-effect` wraps or owns that whole surface. Facade exports are allowed to preserve a downstream dependency boundary, but Effect-native support requires a real wrapper contract and tests.
+Import-surface tests may document broader SDK availability for downstream apps, but they do not imply `pi-effect` wraps or owns that whole surface. Facade exports under `pi-effect/raw` are allowed to preserve a downstream dependency boundary, but Effect-native root support requires a real wrapper contract and tests.
 
 Upgrade flow:
 
@@ -113,7 +113,7 @@ Before adding a wrapper, answer:
 
 - Which public PI SDK API is being wrapped?
 - Is the exposed `pi-effect` API Effect-native, Promise-based, or plain data/config?
-- What downstream repetition or boundary semantics justify the wrapper instead of a facade export?
+- What downstream repetition or boundary semantics justify the wrapper instead of a `pi-effect/raw` facade export?
 - What are the success, failure, defect, and interruption semantics?
 - Which original causes or details must remain visible?
 - What typed errors, if any, help callers act on failures?

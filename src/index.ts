@@ -1,5 +1,3 @@
-export * from "./sdk.js";
-
 export { AgentSessionEffect } from "./session/AgentSessionEffect.js";
 export type {
   AgentSessionFactoryResult,

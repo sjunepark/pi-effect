@@ -3,18 +3,15 @@ import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { Effect, Fiber, Stream } from "effect";
 import { describe, expect, it } from "vitest";
+import { AgentSessionEffect, createAgentSessionEffect, ModelRegistryEffect, type AgentSessionLike } from "../../src/index.js";
 import {
-  AgentSessionEffect,
   AuthStorage,
-  createAgentSessionEffect,
   createExtensionRuntime,
   ModelRegistry,
-  ModelRegistryEffect,
   SessionManager,
   SettingsManager,
-  type AgentSessionLike,
   type ResourceLoader,
-} from "../../src/index.js";
+} from "../../src/raw.js";
 
 const REAL_AGENT_ENABLED = process.env.PI_EFFECT_REAL_AGENT === "1";
 const DEFAULT_PROVIDER = "openai";

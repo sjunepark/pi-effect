@@ -3,10 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  AgentSession,
   AuthStorage,
   ModelRegistry,
   SessionManager,
   SettingsManager,
+  VERSION,
   createAgentSession,
   createBashToolDefinition,
   createEditToolDefinition,
@@ -30,14 +32,16 @@ import {
   type SessionEntry,
   type ToolDefinition,
   type WriteOperations,
-} from "@earendil-works/pi-coding-agent";
+} from "../../src/raw.js";
 import { Type } from "typebox";
 
 const downstreamRuntimeExports = [
+  "AgentSession",
   "AuthStorage",
   "ModelRegistry",
   "SessionManager",
   "SettingsManager",
+  "VERSION",
   "createAgentSession",
   "createBashToolDefinition",
   "createEditToolDefinition",
@@ -50,12 +54,12 @@ const downstreamRuntimeExports = [
   "defineTool",
 ] as const;
 
-describe("Downstream PI SDK import-surface compatibility", () => {
-  it("keeps every downstream-required root runtime export importable from the pinned SDK", async () => {
-    const sdk = await import("@earendil-works/pi-coding-agent");
+describe("Downstream pi-effect/raw import-surface compatibility", () => {
+  it("keeps every downstream-required runtime export importable from the raw subpath", async () => {
+    const [raw, piSdk] = await Promise.all([import("../../src/raw.js"), import("@earendil-works/pi-coding-agent")]);
 
     for (const exportName of downstreamRuntimeExports) {
-      expect(sdk[exportName]).toBeDefined();
+      expect(raw[exportName], exportName).toBe(piSdk[exportName]);
     }
   });
 
