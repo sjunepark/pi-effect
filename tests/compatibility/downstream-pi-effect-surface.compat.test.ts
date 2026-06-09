@@ -27,7 +27,10 @@ import {
 import type {
   AgentSessionFactoryResult,
   AgentSessionLike,
+  AgentSessionRequestStreamOptions,
+  AgentSessionRequestStreamOptionsContext,
   AuthStorageLike,
+  CreateAgentSessionEffectOptions,
   DefineToolEffectConfig,
   DefineToolEffectHandler,
   FakeAgentSessionOptions,
@@ -153,6 +156,8 @@ describe("pi-effect root Effect surface", () => {
 });
 
 void (undefined as unknown as AgentSessionFactoryResult | AgentSessionLike | AuthStorageLike);
+void (undefined as unknown as AgentSessionRequestStreamOptions | AgentSessionRequestStreamOptionsContext);
+void (undefined as unknown as CreateAgentSessionEffectOptions);
 void (undefined as unknown as DefineToolEffectConfig<never, never> | DefineToolEffectHandler<never, never>);
 void (undefined as unknown as FakeAgentSessionOptions | ModelRegistryLike | SettingsManagerLike);
 void (undefined as unknown as AgentSession | AgentSessionEvent | AgentSessionEventListener | AgentToolResult);

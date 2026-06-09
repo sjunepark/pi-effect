@@ -21,6 +21,7 @@ Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.0`.
 Implemented:
 
 - scoped session creation with `createAgentSessionEffect(...)`, preserving PI's `CreateAgentSessionResult`
+- session-local `requestStreamOptions` hooks for adding per-request provider metadata/headers while keeping PI's normal auth, attribution-header, retry, timeout, and custom-provider dispatch path
 - prompt execution through `AgentSessionEffect.prompt(...)`, with PI preflight rejection mapped to `AgentSessionPromptRejectedError` and Effect interruption wired to `session.abort()`
 - session event streams through `AgentSessionEffect.events(...)` / `AgentSessionEventStream.fromSession(...)`
 - Effect handler adapter for PI `defineTool(...)` via `defineToolEffect(...)`
@@ -71,6 +72,19 @@ await Effect.runPromise(program);
 ```
 
 `AgentSessionEffect.prompt` is Effect-native: fiber interruption remains Effect interruption, and the wrapper uses `Effect.onInterrupt` to call `session.abort()` for PI cleanup.
+
+Use `requestStreamOptions` when a session needs request-local provider metadata or headers without replacing PI's stream function:
+
+```ts
+const { session } = yield* AgentSessionEffect.create({
+  requestStreamOptions: ({ options }) => ({
+    headers: { "x-workflow-run": String(options?.metadata?.workflowRunId) },
+    metadata: { tenant: "acme" },
+  }),
+});
+```
+
+Returned options are merged into PI's current request options before PI resolves credentials, attribution headers, retries, timeouts, and `model.api` custom-provider dispatch.
 
 ### Event streams
 
@@ -152,7 +166,7 @@ Do not paste API keys into chat, commits, issues, or fixtures. The API-key path 
 
 Currently supported adapter surface:
 
-- `createAgentSession(...)` and the `AgentSession` members used here: `sessionId`, `prompt`, `abort`, `subscribe`, `dispose`, and custom tool lookup
+- `createAgentSession(...)` and the `AgentSession` members used here: `sessionId`, `prompt`, `abort`, `subscribe`, `dispose`, custom tool lookup, and `session.agent.streamFn` for the opt-in request-options hook
 - `defineTool(...)` / `ToolDefinition` for Effect-backed custom tools
 - `SettingsManager.flush()` / `drainErrors()` for settings durability boundaries
 - `ModelRegistry.find(...)` for typed model lookup

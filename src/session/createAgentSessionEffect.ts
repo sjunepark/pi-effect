@@ -6,6 +6,20 @@ import {
 import { Effect, Scope } from "effect";
 import type { AgentSessionLike, CreateAgentSessionEffectFactory } from "./AgentSessionEffect.js";
 import { CreateAgentSessionError, normalizeCreateAgentSessionError } from "./AgentSessionEffectError.js";
+import {
+  installRequestStreamOptionsHook,
+  type AgentSessionRequestStreamOptions,
+} from "./AgentSessionRequestStreamOptions.js";
+
+export interface CreateAgentSessionEffectOptions extends CreateAgentSessionOptions {
+  /**
+   * Derive extra provider stream options for each PI request in this session.
+   *
+   * Returned options are merged into PI's current request options before PI runs
+   * its normal auth/header attribution and `model.api` provider dispatch path.
+   */
+  requestStreamOptions?: AgentSessionRequestStreamOptions;
+}
 
 const releaseSession = (session: AgentSessionLike): Effect.Effect<void> =>
   Effect.sync(() => {
@@ -25,9 +39,18 @@ const releaseSession = (session: AgentSessionLike): Effect.Effect<void> =>
  * called exactly once.
  */
 export const createAgentSessionEffect = (
-  options?: CreateAgentSessionOptions,
+  options?: CreateAgentSessionEffectOptions,
 ): Effect.Effect<CreateAgentSessionResult, CreateAgentSessionError, Scope.Scope> =>
-  createAgentSessionEffectFrom(() => createAgentSession(options));
+  createAgentSessionEffectFrom(async () => {
+    const { requestStreamOptions, ...piOptions } = options ?? {};
+    const result = await createAgentSession(piOptions);
+
+    if (requestStreamOptions) {
+      installRequestStreamOptionsHook(result.session, requestStreamOptions);
+    }
+
+    return result;
+  });
 
 /**
  * Dependency-injected variant of `createAgentSessionEffect(...)`.

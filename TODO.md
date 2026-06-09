@@ -2,8 +2,8 @@
 
 ## Near-term tickets
 
-- [ ] Add a PI SDK-shaped per-request stream-options hook for session-local provider state.
-  - Downstream apps that register global custom APIs currently have to wrap `session.agent.streamFn` to add request-local metadata/headers before PI resolves `model.api` through the process-global provider registry.
-  - Provide a public `createAgentSession` / `AgentSessionEffect.create` option that can derive `SimpleStreamOptions` from `{ model, context, options }` without bypassing PI's normal provider dispatch or requiring direct `@earendil-works/pi-agent-core` / `@earendil-works/pi-ai` wrappers.
-  - Avoid requiring downstream mutation of `session.agent.streamFn`, and preserve existing auth/header attribution behavior.
-  - Add compatibility coverage proving custom provider registrations remain global while request metadata/headers are isolated per session/request.
+- [x] Add a PI SDK-shaped per-request stream-options hook for session-local provider state.
+  - Added `requestStreamOptions` to `createAgentSessionEffect` / `AgentSessionEffect.create` so callers can derive extra stream options from `{ model, context, options }` without mutating `session.agent.streamFn` downstream.
+  - The hook wraps PI's existing session stream function, preserving normal auth lookup, attribution/header merging, retry/timeout settings, and global `model.api` provider dispatch.
+  - Added compatibility coverage showing a custom API registration remains globally available while two sessions receive isolated request headers/metadata.
+  - Validation: `bun run typecheck` passed; `bun run test tests/compatibility/session.compat.test.ts` passed; `bun run test` passed; `bun run build` passed.

@@ -7,7 +7,15 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { events } from "./AgentSessionEventStream.js";
 import { prompt } from "./AgentSessionPromptEffect.js";
-import { createAgentSessionEffect, createAgentSessionEffectFrom } from "./createAgentSessionEffect.js";
+import {
+  createAgentSessionEffect,
+  createAgentSessionEffectFrom,
+  type CreateAgentSessionEffectOptions,
+} from "./createAgentSessionEffect.js";
+import type {
+  AgentSessionRequestStreamOptions,
+  AgentSessionRequestStreamOptionsContext,
+} from "./AgentSessionRequestStreamOptions.js";
 
 /**
  * Minimal structural subset of PI SDK `AgentSession` used by pi-effect helpers.
@@ -38,7 +46,15 @@ export type CreateAgentSessionEffectFactory<
   Result extends { readonly session: Session } = AgentSessionFactoryResult<Session>,
 > = () => PromiseLike<Result>;
 
-export type { AgentSession, AgentSessionEvent, AgentSessionEventListener, PromptOptions };
+export type {
+  AgentSession,
+  AgentSessionEvent,
+  AgentSessionEventListener,
+  AgentSessionRequestStreamOptions,
+  AgentSessionRequestStreamOptionsContext,
+  CreateAgentSessionEffectOptions,
+  PromptOptions,
+};
 
 /**
  * Effect helpers grouped by the original PI SDK `AgentSession` concept.

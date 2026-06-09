@@ -17,6 +17,11 @@ export {
 } from "./session/AgentSessionEffectError.js";
 export type { PiSdkEffectError, PiSdkEffectErrorOptions } from "./session/AgentSessionEffectError.js";
 export { createAgentSessionEffect, createAgentSessionEffectFrom } from "./session/createAgentSessionEffect.js";
+export type { CreateAgentSessionEffectOptions } from "./session/createAgentSessionEffect.js";
+export type {
+  AgentSessionRequestStreamOptions,
+  AgentSessionRequestStreamOptionsContext,
+} from "./session/AgentSessionRequestStreamOptions.js";
 export type { AgentSessionPromptFailure } from "./session/AgentSessionPromptEffect.js";
 export { AgentSessionEventStream } from "./session/AgentSessionEventStream.js";
 export type { AgentSessionEventStreamOptions } from "./session/AgentSessionEventStream.js";

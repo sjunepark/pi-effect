@@ -7,13 +7,42 @@ import {
   SessionManager,
   SettingsManager,
   type AgentSessionEvent,
+  type ProviderConfig,
   type ResourceLoader,
 } from "@earendil-works/pi-coding-agent";
 import { Effect, Either, Stream } from "effect";
 import { Type } from "typebox";
-import { AgentSessionEffect, AgentSessionPromptRejectedError, defineToolEffect } from "../../src/index.js";
+import { AgentSessionEffect, AgentSessionPromptRejectedError, createAgentSessionEffect, defineToolEffect } from "../../src/index.js";
 
 type CreateAgentSessionOptions = NonNullable<Parameters<typeof createAgentSession>[0]>;
+type ProviderStreamSimple = NonNullable<ProviderConfig["streamSimple"]>;
+type AssistantMessage = Awaited<ReturnType<ReturnType<ProviderStreamSimple>["result"]>>;
+
+const createFinalMessage = (model: Parameters<ProviderStreamSimple>[0], text: string): AssistantMessage => ({
+  role: "assistant",
+  content: [{ type: "text", text }],
+  api: model.api,
+  provider: model.provider,
+  model: model.id,
+  usage: {
+    input: 0,
+    output: 0,
+    cacheRead: 0,
+    cacheWrite: 0,
+    totalTokens: 0,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+  },
+  stopReason: "stop",
+  timestamp: Date.now(),
+});
+
+const createFinishedStream = (message: AssistantMessage): ReturnType<ProviderStreamSimple> =>
+  ({
+    async *[Symbol.asyncIterator]() {
+      yield { type: "done", reason: "stop", message };
+    },
+    result: async () => message,
+  }) as unknown as ReturnType<ProviderStreamSimple>;
 
 const createCompatResourceLoader = (): ResourceLoader => ({
   getExtensions: () => ({ extensions: [], errors: [], runtime: createExtensionRuntime() }),
@@ -152,6 +181,102 @@ describe("PI AgentSession compatibility", () => {
       unsubscribe();
       session.dispose();
     }
+  });
+
+  it("adds session-local request stream options while leaving custom API registration global", async () => {
+    const api = `pi-effect-stream-options-${Date.now()}`;
+    const provider = `pi-effect-provider-${Date.now()}`;
+    const observedOptions: Array<Parameters<ProviderStreamSimple>[2]> = [];
+    const model = {
+      id: "metadata-model",
+      name: "Metadata Model",
+      api,
+      provider,
+      baseUrl: "https://example.invalid/v1",
+      reasoning: false,
+      input: ["text"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 4096,
+      maxTokens: 1024,
+    } satisfies NonNullable<CreateAgentSessionOptions["model"]>;
+    const streamSimple: ProviderStreamSimple = (requestModel, _context, options) => {
+      observedOptions.push(options);
+      return createFinishedStream(createFinalMessage(requestModel, "ok"));
+    };
+    const firstModelRegistry = ModelRegistry.inMemory(AuthStorage.inMemory());
+    firstModelRegistry.registerProvider(provider, {
+      api,
+      apiKey: "first-key",
+      headers: { "x-provider": "registered" },
+      streamSimple,
+    });
+    const secondAuthStorage = AuthStorage.inMemory();
+    secondAuthStorage.set(provider, { type: "api_key", key: "second-key" });
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const { session: firstSession } = yield* createAgentSessionEffect({
+            model,
+            modelRegistry: firstModelRegistry,
+            resourceLoader: createCompatResourceLoader(),
+            sessionManager: SessionManager.inMemory(),
+            settingsManager: SettingsManager.inMemory(),
+            noTools: "all",
+            requestStreamOptions: ({ options }) => ({
+              headers: { "x-request": String(options?.metadata?.requestId), "x-session": "first" },
+              metadata: { tenant: "first" },
+            }),
+          });
+          const { session: secondSession } = yield* createAgentSessionEffect({
+            model,
+            authStorage: secondAuthStorage,
+            sessionManager: SessionManager.inMemory(),
+            settingsManager: SettingsManager.inMemory(),
+            resourceLoader: createCompatResourceLoader(),
+            noTools: "all",
+            requestStreamOptions: ({ options }) => ({
+              headers: { "x-request": String(options?.metadata?.requestId), "x-session": "second" },
+              metadata: { tenant: "second" },
+            }),
+          });
+
+          yield* Effect.promise(() =>
+            Promise.resolve(
+              firstSession.agent.streamFn(model, { messages: [] }, {
+                headers: { "x-base": "base" },
+                metadata: { requestId: "one" },
+              }),
+            ),
+          );
+          yield* Effect.promise(() =>
+            Promise.resolve(
+              secondSession.agent.streamFn(model, { messages: [] }, {
+                headers: { "x-base": "base" },
+                metadata: { requestId: "two" },
+              }),
+            ),
+          );
+        }),
+      ),
+    );
+
+    expect(observedOptions).toHaveLength(2);
+    expect(observedOptions[0]).toMatchObject({
+      apiKey: "first-key",
+      headers: {
+        "x-base": "base",
+        "x-provider": "registered",
+        "x-request": "one",
+        "x-session": "first",
+      },
+      metadata: { requestId: "one", tenant: "first" },
+    });
+    expect(observedOptions[1]).toMatchObject({
+      apiKey: "second-key",
+      headers: { "x-base": "base", "x-request": "two", "x-session": "second" },
+      metadata: { requestId: "two", tenant: "second" },
+    });
   });
 
   it("registers defineToolEffect results as custom PI tool definitions", async () => {
