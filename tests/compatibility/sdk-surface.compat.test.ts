@@ -25,8 +25,8 @@ describe("pi-coding-agent 0.78 public SDK compatibility", () => {
       dependencies: Record<string, string>;
     };
 
-    expect(packageJson.dependencies["@earendil-works/pi-coding-agent"]).toBe("0.78.0");
-    expect(VERSION).toBe("0.78.0");
+    expect(packageJson.dependencies["@earendil-works/pi-coding-agent"]).toBe("0.78.1");
+    expect(VERSION).toBe("0.78.1");
   });
 
   it("keeps the adapter-relevant root SDK exports importable", async () => {

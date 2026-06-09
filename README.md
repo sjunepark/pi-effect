@@ -16,7 +16,7 @@ Prefer the `pi-effect/raw` subpath for direct PI SDK names that downstream apps 
 
 ## Current status
 
-Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.0`.
+Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.1`.
 
 Implemented:
 
@@ -175,6 +175,6 @@ Currently supported adapter surface:
 
 The suite also has a shallow downstream import-surface sentinel for upstream SDK availability, a root `pi-effect` boundary test proving raw facade names stay out of the Effect entry, and a `pi-effect/raw` subpath sentinel proving the facade-only entry stays separate from Effect wrapper modules. The direct downstream facade imports available from `pi-effect/raw` are: `AuthStorage`, `AuthStorageBackend`, `ModelRegistry`, `ResourceLoader`, `SessionManager`, `SettingsManager`, `createAgentSession`, `createExtensionRuntime`, built-in tool-definition factories, file operation interfaces, `defineTool`, `ToolDefinition`, `AgentToolResult`, `AgentSessionEvent`, `SessionEntry`, and `AuthCredential`.
 
-Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.0`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
+Known outside the supported surface: the package currently advertises `@earendil-works/pi-coding-agent/hooks`, but that subpath is not importable in `0.78.1`; the compatibility suite documents that as an upstream packaging signal, not a `pi-effect` contract.
 
 The compatibility suite should remain focused on public `@earendil-works/pi-coding-agent` behavior. Avoid depending on PI private internals unless a test pins the public behavior that motivated the wrapper contract.

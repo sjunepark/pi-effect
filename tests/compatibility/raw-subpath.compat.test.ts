@@ -43,7 +43,7 @@ describe("pi-effect/raw facade-only subpath", () => {
     for (const [exportName, exportedValue] of Object.entries(downstreamRuntimeExports)) {
       expect(exportedValue, exportName).toBeDefined();
     }
-    expect(VERSION).toBe("0.78.0");
+    expect(VERSION).toBe("0.78.1");
   });
 
   it("is published as a package subpath", () => {
