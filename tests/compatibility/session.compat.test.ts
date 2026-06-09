@@ -183,6 +183,13 @@ describe("PI AgentSession compatibility", () => {
     }
   });
 
+  /**
+   * Protects the downstream-managed-provider use case: PI's custom API registry is
+   * process-global, but request metadata and headers must stay isolated per
+   * session/request. The hook must enrich options before PI performs its normal
+   * auth/header merging and `model.api` provider dispatch, without downstream apps
+   * replacing `session.agent.streamFn` themselves.
+   */
   it("adds session-local request stream options while leaving custom API registration global", async () => {
     const api = `pi-effect-stream-options-${Date.now()}`;
     const provider = `pi-effect-provider-${Date.now()}`;
