@@ -47,6 +47,9 @@ const mergeStreamOptions = (base: StreamOptions, derived: StreamOptions): Stream
   } else {
     delete merged.metadata;
   }
+  if (base?.signal) {
+    merged.signal = base.signal;
+  }
 
   return merged;
 };

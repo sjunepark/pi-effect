@@ -212,6 +212,10 @@ describe("PI AgentSession compatibility", () => {
     });
     const secondAuthStorage = AuthStorage.inMemory();
     secondAuthStorage.set(provider, { type: "api_key", key: "second-key" });
+    const firstRequestSignal = new AbortController().signal;
+    const firstHookSignal = new AbortController().signal;
+    const secondRequestSignal = new AbortController().signal;
+    const unsetSignal = { signal: undefined } as unknown as NonNullable<Parameters<ProviderStreamSimple>[2]>;
 
     await Effect.runPromise(
       Effect.scoped(
@@ -224,6 +228,7 @@ describe("PI AgentSession compatibility", () => {
             settingsManager: SettingsManager.inMemory(),
             noTools: "all",
             requestStreamOptions: ({ options }) => ({
+              signal: firstHookSignal,
               headers: { "x-request": String(options?.metadata?.requestId), "x-session": "first" },
               metadata: { tenant: "first" },
             }),
@@ -236,6 +241,7 @@ describe("PI AgentSession compatibility", () => {
             resourceLoader: createCompatResourceLoader(),
             noTools: "all",
             requestStreamOptions: ({ options }) => ({
+              ...unsetSignal,
               headers: { "x-request": String(options?.metadata?.requestId), "x-session": "second" },
               metadata: { tenant: "second" },
             }),
@@ -244,6 +250,7 @@ describe("PI AgentSession compatibility", () => {
           yield* Effect.promise(() =>
             Promise.resolve(
               firstSession.agent.streamFn(model, { messages: [] }, {
+                signal: firstRequestSignal,
                 headers: { "x-base": "base" },
                 metadata: { requestId: "one" },
               }),
@@ -252,6 +259,7 @@ describe("PI AgentSession compatibility", () => {
           yield* Effect.promise(() =>
             Promise.resolve(
               secondSession.agent.streamFn(model, { messages: [] }, {
+                signal: secondRequestSignal,
                 headers: { "x-base": "base" },
                 metadata: { requestId: "two" },
               }),
@@ -272,11 +280,14 @@ describe("PI AgentSession compatibility", () => {
       },
       metadata: { requestId: "one", tenant: "first" },
     });
+    expect(observedOptions[0]?.signal).toBe(firstRequestSignal);
+    expect(observedOptions[0]?.signal).not.toBe(firstHookSignal);
     expect(observedOptions[1]).toMatchObject({
       apiKey: "second-key",
       headers: { "x-base": "base", "x-request": "two", "x-session": "second" },
       metadata: { requestId: "two", tenant: "second" },
     });
+    expect(observedOptions[1]?.signal).toBe(secondRequestSignal);
   });
 
   it("registers defineToolEffect results as custom PI tool definitions", async () => {
