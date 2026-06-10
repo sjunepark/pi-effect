@@ -43,6 +43,14 @@ Not implemented yet:
 - broader Effect-native PI SDK wrappers outside the current adapter contract
 - deeper PI error classification beyond conservative wrapper errors
 
+## Installation
+
+```bash
+bun add pi-effect
+```
+
+Other package managers can install the same npm package, for example `npm install pi-effect`, `pnpm add pi-effect`, or `yarn add pi-effect`.
+
 ## Usage
 
 ### PI SDK compatibility facade
@@ -159,6 +167,10 @@ Supported environment variables:
 - `PI_EFFECT_AGENT_DIR=/path/to/.pi/agent` reuses an existing PI agent directory for OAuth/subscription credentials and custom `models.json`.
 
 Do not paste API keys into chat, commits, issues, or fixtures. The API-key path uses provider environment variables and temporary session state. The OAuth/subscription path reads local credentials from `PI_EFFECT_AGENT_DIR`. The smoke test makes real network requests and may incur provider cost, so prefer cheap, fast models.
+
+## Release
+
+Releases are managed by Release Please and published to npm from GitHub Actions. See [`docs/release.md`](./docs/release.md) for required npm/GitHub setup, trusted publishing configuration, and the automated release flow.
 
 ## Compatibility strategy
 

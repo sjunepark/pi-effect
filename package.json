@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "description": "Effect-native adapter around the public pi coding agent SDK.",
   "type": "module",
-  "private": true,
+  "packageManager": "bun@1.3.13",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sjunepark/pi-effect.git"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,8 +25,13 @@
     "TODO.md",
     "WRAPPING_RULES.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "bun run build",
+    "prepublishOnly": "bun run typecheck && bun run test",
     "validate": "bun run typecheck && bun run test && bun run build && bun run secrets",
     "test": "vitest --run",
     "test:real-agent": "vitest --run --config vitest.real-agent.config.ts",

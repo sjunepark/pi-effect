@@ -25,7 +25,13 @@
 - Update `README.md` when public usage or supported behavior changes.
 - Update `TODO.md` when near-term work or PI compatibility priorities change.
 - Update `WRAPPING_RULES.md` when durable adapter-design rules change.
-- Keep the pinned PI SDK version (`@earendil-works/pi-coding-agent@0.78.0`) unless the task is explicitly an upgrade; an upgrade must include compatibility-test updates.
+- Keep the pinned PI SDK version (`@earendil-works/pi-coding-agent@0.78.1`) unless the task is explicitly an upgrade; an upgrade must include compatibility-test updates.
+
+## Release and publishing
+- Read `docs/release.md` before preparing release automation changes, Release Please PRs, tags, or manual npm publish fallbacks.
+- Release Please owns normal version bumps, changelog updates, source tags, and GitHub Releases; do not manually edit them except for the documented manual fallback.
+- Use Conventional Commit messages. While the package is pre-1.0, normal `feat:` and `fix:` commits become patch releases; breaking commits using `!` or `BREAKING CHANGE:` become minor releases.
+- Manual release tags must match `package.json` exactly: version `x.y.z` uses source tag `vx.y.z`.
 
 ## Safety and approvals
 - Do not wrap `@earendil-works/pi-agent-core` or `@earendil-works/pi-ai` directly unless a concrete public SDK gap requires it.
