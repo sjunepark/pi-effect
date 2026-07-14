@@ -9,16 +9,13 @@ Guide release preparation for projects whose versioning and changelog are owned 
 
 ## Required Dependency Gate
 
-Before classifying or preparing a release, verify that the project uses Release Please.
+Before classifying or preparing a release, verify that the project uses Release Please. Treat `release-please-config.json`, `.release-please-manifest.json`, and equivalent manifest config as leads. Pass the gate only when config is corroborated by at least one active integration signal:
 
-Accept evidence such as:
-
-- `release-please-config.json`, `.release-please-manifest.json`, or equivalent manifest config.
 - A Release Please workflow using `googleapis/release-please-action`.
 - Project docs that state Release Please owns version bumps, changelog updates, tags, or releases.
 - A direct dependency or documented CLI usage of `release-please`.
 
-If none exists:
+If config has no corroborating signal, or no Release Please evidence exists:
 
 - Do not infer a custom release workflow.
 - Ask whether the user wants to add Release Please or use another process.
@@ -43,9 +40,9 @@ Then map releasable changes to SemVer in Release Please terms:
 
 - `patch`: bug fixes, plus configured patch-level docs/refactor/chore/dependency changes that do not alter public behavior.
 - `minor`: new backward-compatible user-facing behavior, new commands/options/APIs, broader support, additive output fields that consumers can safely ignore.
-- `major` / breaking: any incompatible public contract change. Require `!` in the Conventional Commit type/scope or a `BREAKING CHANGE:` footer.
+- `breaking`: any incompatible public contract change. Require `!` in the Conventional Commit type/scope or a `BREAKING CHANGE:` footer.
 
-For pre-1.0 projects, inspect Release Please config for options such as `bump-minor-pre-major` or `bump-patch-for-minor-pre-major`. If absent, state Release Please's default behavior instead of assuming a custom pre-1.0 policy.
+For 1.0+ projects, breaking changes produce major bumps. For pre-1.0 projects, inspect Release Please config for options such as `bump-minor-pre-major` or `bump-patch-for-minor-pre-major`. In this repository, `bump-minor-pre-major: true` makes breaking `0.x` changes minor bumps, while `bump-patch-for-minor-pre-major: true` makes non-breaking features patch bumps. If these options are absent, state Release Please's default behavior instead of assuming a custom pre-1.0 policy.
 
 ## Breaking Change Checklist
 
