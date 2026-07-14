@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import {
   ModelRegistryEffect,
@@ -33,12 +33,12 @@ describe("ModelRegistryEffect", () => {
   it("normalizes missing models to ModelRegistryModelNotFoundError", async () => {
     const registry = { find: vi.fn(() => undefined) };
 
-    const result = await Effect.runPromise(ModelRegistryEffect.find(registry, "missing", "model").pipe(Effect.either));
+    const result = await Effect.runPromise(ModelRegistryEffect.find(registry, "missing", "model").pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(ModelRegistryModelNotFoundError);
-      expect(result.left.cause).toEqual({ provider: "missing", modelId: "model" });
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(ModelRegistryModelNotFoundError);
+      expect(result.failure.cause).toEqual({ provider: "missing", modelId: "model" });
     }
   });
 
@@ -50,12 +50,12 @@ describe("ModelRegistryEffect", () => {
       }),
     };
 
-    const result = await Effect.runPromise(ModelRegistryEffect.find(registry, "unit", "model").pipe(Effect.either));
+    const result = await Effect.runPromise(ModelRegistryEffect.find(registry, "unit", "model").pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(UnknownPiSdkError);
-      expect(result.left.cause).toBe(cause);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(UnknownPiSdkError);
+      expect(result.failure.cause).toBe(cause);
     }
   });
 });

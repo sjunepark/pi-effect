@@ -66,15 +66,15 @@ Effect interruption is not the same as normal failure.
 
 For Effect-native APIs, preserve interruption as interruption. Use finalizers or `Effect.onInterrupt` for cleanup, but do not convert ordinary fiber interruption into a typed failure just to fit the error channel. Current example: `AgentSessionEffect.prompt` remains interrupted when its fiber is interrupted, while `Effect.onInterrupt` calls `session.abort()` for PI cleanup.
 
-For non-Effect PI callback boundaries, JavaScript Promises have no interruption channel. If an Effect-backed implementation is exposed through a Promise API and interruption would otherwise reject with an Effect `FiberFailure`, wrap it in a stable package-defined interruption error and preserve the original `FiberFailure` as `cause`.
+For non-Effect PI callback boundaries, JavaScript Promises have no interruption channel. Effect v4 Promise runners squash failures before rejecting, so inspect `runPromiseExit(...)` and classify its public `Cause` before crossing the Promise boundary. Wrap interruption in a stable package-defined interruption error and preserve the original `Cause` as `cause`.
 
 Current example:
 
 ```text
 Effect handler interrupted by PI AbortSignal
-  -> Effect FiberFailure from runPromise
+  -> interrupted Effect Cause from runPromiseExit
   -> ToolEffectInterruptedError
-       cause: original FiberFailure
+       cause: original Cause
 ```
 
 This keeps cancellation classifiable for non-Effect callers without hiding Effect diagnostics.
@@ -89,8 +89,15 @@ When an Effect program is run to satisfy a PI Promise contract:
 - convert expected Effect failures into the relevant typed wrapper error;
 - convert defects or synchronous throws into defect-style wrapper errors;
 - convert interruption into a distinct interruption wrapper error only at the Promise boundary;
-- preserve the original rejected value or `FiberFailure` as `cause`;
+- preserve the original failure or defect value, or the interruption `Cause`, as `cause`;
 - test the Promise-facing rejection shape, not only the internal Effect value.
+
+## Callback Stream Policy
+
+PI callback sources cannot be backpressured. Keep callback streams unbounded by
+default when every event carries lifecycle state. If callers explicitly select
+a bounded buffer, fail with a typed overflow error rather than silently dropping
+events; a dropped terminal event can otherwise leave consumers waiting forever.
 
 ## Compatibility Policy
 

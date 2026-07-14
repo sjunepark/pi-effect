@@ -1,5 +1,13 @@
 # AGENTS.md
 
+<!-- effect-solutions:start -->
+
+## Effect
+
+Before writing Effect code, run `effect-solutions list`, then `effect-solutions show <topic>` for the relevant guide. Do not guess Effect patterns.
+
+<!-- effect-solutions:end -->
+
 ## Setup commands
 - Install dependencies: `bun install`.
 - Use Node `>=22.19.0` and Bun; keep `bun.lock` in sync when dependencies change.
@@ -25,7 +33,7 @@
 - Update `README.md` when public usage or supported behavior changes.
 - Update `TODO.md` when near-term work or PI compatibility priorities change.
 - Update `WRAPPING_RULES.md` when durable adapter-design rules change.
-- Keep the pinned PI SDK version (`@earendil-works/pi-coding-agent@0.78.1`) unless the task is explicitly an upgrade; an upgrade must include compatibility-test updates.
+- Keep the pinned PI SDK version (`@earendil-works/pi-coding-agent@0.80.6`) unless the task is explicitly an upgrade; an upgrade must include compatibility-test updates.
 
 ## Release and publishing
 - Read `docs/release.md` before preparing release automation changes, Release Please PRs, tags, or manual npm publish fallbacks.

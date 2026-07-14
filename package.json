@@ -42,8 +42,8 @@
     "secrets:staged": "gitleaks git . --staged --redact --verbose"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "0.78.1",
-    "effect": "^3.19.6",
+    "@earendil-works/pi-coding-agent": "0.80.6",
+    "effect": "4.0.0-beta.98",
     "typebox": "1.1.38"
   },
   "devDependencies": {

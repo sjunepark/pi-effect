@@ -1,36 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { Effect } from "effect";
-import { isInterruptedFiberFailure } from "../../src/effect/EffectRuntimeFailure.js";
+import { Cause, Effect } from "effect";
+import { isInterruptedCause } from "../../src/effect/EffectRuntimeFailure.js";
 
-const runAndCaptureRejection = async (effect: Effect.Effect<unknown, unknown>): Promise<unknown> => {
-  try {
-    await Effect.runPromise(effect);
-  } catch (error) {
-    return error;
-  }
-  throw new Error("Expected Effect.runPromise to reject");
+const runAndCaptureCause = async (effect: Effect.Effect<unknown, unknown>): Promise<Cause.Cause<unknown>> => {
+  const exit = await Effect.runPromiseExit(effect);
+  if (exit._tag === "Failure") return exit.cause;
+  throw new Error("Expected Effect.runPromiseExit to fail");
 };
 
-describe("Effect runtime failure classification", () => {
-  it("recognizes Effect runtime rejections that are only interruption", async () => {
+describe("Effect cause classification", () => {
+  it("recognizes Effect causes that are only interruption", async () => {
     const controller = new AbortController();
-    const rejection = Effect.runPromise(Effect.never, { signal: controller.signal }).catch((error) => error);
+    const exit = Effect.runPromiseExit(Effect.never, { signal: controller.signal });
 
     controller.abort();
 
-    expect(isInterruptedFiberFailure(await rejection)).toBe(true);
+    const result = await exit;
+    expect(result._tag).toBe("Failure");
+    if (result._tag === "Failure") {
+      expect(isInterruptedCause(result.cause)).toBe(true);
+    }
   });
 
   it("does not treat Effect failures or defects as interruption", async () => {
-    const failure = await runAndCaptureRejection(Effect.fail("boom"));
-    const defect = await runAndCaptureRejection(Effect.die(new Error("defect")));
+    const failure = await runAndCaptureCause(Effect.fail("boom"));
+    const defect = await runAndCaptureCause(Effect.die(new Error("defect")));
 
-    expect(isInterruptedFiberFailure(failure)).toBe(false);
-    expect(isInterruptedFiberFailure(defect)).toBe(false);
+    expect(isInterruptedCause(failure)).toBe(false);
+    expect(isInterruptedCause(defect)).toBe(false);
   });
 
-  it("does not treat non-Effect rejections as interruption", () => {
-    expect(isInterruptedFiberFailure(new Error("plain error"))).toBe(false);
-    expect(isInterruptedFiberFailure("boom")).toBe(false);
+  it("does not treat non-Cause values as interruption", () => {
+    expect(isInterruptedCause(new Error("plain error"))).toBe(false);
+    expect(isInterruptedCause("boom")).toBe(false);
   });
 });

@@ -26,6 +26,33 @@ export type AuthStorageWriteError = AuthStorageEffectError;
 
 const formatAuthStorageErrors = (errors: readonly Error[]): string => errors.map((error) => error.message).join("; ");
 
+const normalizeThrownAuthStorageError = (
+  authStorage: AuthStorageLike | AuthStorage,
+  cause: unknown,
+): AuthStorageEffectError => {
+  const primaryError = new AuthStorageEffectError({ cause });
+  let recordedErrors: Error[];
+
+  try {
+    // PI 0.80+ both throws and records persistence failures. Drain the recorded
+    // copy so a later, unrelated auth operation does not report it again.
+    recordedErrors = authStorage.drainErrors();
+  } catch (drainCause) {
+    return new AuthStorageEffectError({
+      message: primaryError.message,
+      cause: [cause, drainCause],
+    });
+  }
+
+  const additionalErrors = recordedErrors.filter((recordedError) => recordedError !== cause);
+  return additionalErrors.length === 0
+    ? primaryError
+    : new AuthStorageEffectError({
+        message: primaryError.message,
+        cause: [cause, ...additionalErrors],
+      });
+};
+
 const failOnRecordedErrors = (
   authStorage: AuthStorageLike | AuthStorage,
   operation: string,
@@ -103,17 +130,16 @@ export const login = (
 ): Effect.Effect<void, AuthStorageLoginError> =>
   Effect.tryPromise({
     try: () => authStorage.login(providerId, callbacks),
-    catch: (cause) => new AuthStorageEffectError({ cause }),
+    catch: (cause) => normalizeThrownAuthStorageError(authStorage, cause),
   }).pipe(Effect.flatMap(() => failOnRecordedErrors(authStorage, `login to ${providerId}`)));
 
 /**
  * Effect wrapper around PI SDK `AuthStorage.set(...)` that treats recorded
  * persistence errors as part of the write boundary.
  *
- * This preserves PI's non-transactional state semantics: PI mutates its
- * in-memory credential map before attempting backend persistence. A failure
- * from this helper means persistence failed or PI recorded a storage error; it
- * does not mean the in-memory credential update was rolled back.
+ * PI 0.80+ persists first and only updates its in-memory credential map after a
+ * successful write. The wrapper preserves that behavior and drains the
+ * recorded copy of any thrown persistence error.
  */
 export const set = (
   authStorage: AuthStorageLike | AuthStorage,
@@ -122,17 +148,16 @@ export const set = (
 ): Effect.Effect<void, AuthStorageWriteError> =>
   Effect.try({
     try: () => authStorage.set(provider, credential),
-    catch: (cause) => new AuthStorageEffectError({ cause }),
+    catch: (cause) => normalizeThrownAuthStorageError(authStorage, cause),
   }).pipe(Effect.flatMap(() => failOnRecordedErrors(authStorage, `persist credentials for ${provider}`)));
 
 /**
  * Effect wrapper around PI SDK `AuthStorage.remove(...)` that treats recorded
  * persistence errors as part of the write boundary.
  *
- * This preserves PI's non-transactional state semantics: PI mutates its
- * in-memory credential map before attempting backend persistence. A failure
- * from this helper means persistence failed or PI recorded a storage error; it
- * does not mean the in-memory credential removal was rolled back.
+ * PI 0.80+ persists first and only updates its in-memory credential map after a
+ * successful write. The wrapper preserves that behavior and drains the
+ * recorded copy of any thrown persistence error.
  */
 export const remove = (
   authStorage: AuthStorageLike | AuthStorage,
@@ -140,7 +165,7 @@ export const remove = (
 ): Effect.Effect<void, AuthStorageWriteError> =>
   Effect.try({
     try: () => authStorage.remove(provider),
-    catch: (cause) => new AuthStorageEffectError({ cause }),
+    catch: (cause) => normalizeThrownAuthStorageError(authStorage, cause),
   }).pipe(Effect.flatMap(() => failOnRecordedErrors(authStorage, `remove credentials for ${provider}`)));
 
 /**
@@ -153,7 +178,7 @@ export const remove = (
 export const reload = (authStorage: AuthStorageLike | AuthStorage): Effect.Effect<void, AuthStorageWriteError> =>
   Effect.try({
     try: () => authStorage.reload(),
-    catch: (cause) => new AuthStorageEffectError({ cause }),
+    catch: (cause) => normalizeThrownAuthStorageError(authStorage, cause),
   }).pipe(Effect.flatMap(() => failOnRecordedErrors(authStorage, "reload credentials")));
 
 /** Effect wrapper around PI SDK `AuthStorage.drainErrors()` without failing on recorded errors. */

@@ -1,8 +1,9 @@
 import type { AgentSessionEvent } from "@earendil-works/pi-coding-agent";
-import { Effect, Either, Stream } from "effect";
+import { Effect, Result, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import {
   AgentSessionEffect,
+  AgentSessionEventStreamOverflowError,
   AgentSessionPromptError,
   AgentSessionPromptRejectedError,
 } from "../../src/index.js";
@@ -46,13 +47,13 @@ describe("AgentSessionEffect", () => {
     });
 
     const result = await Effect.runPromise(
-      AgentSessionEffect.prompt(session, "rejected", { preflightResult }).pipe(Effect.either),
+      AgentSessionEffect.prompt(session, "rejected", { preflightResult }).pipe(Effect.result),
     );
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(AgentSessionPromptRejectedError);
-      expect(result.left.cause).toBe(cause);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AgentSessionPromptRejectedError);
+      expect(result.failure.cause).toBe(cause);
     }
     expect(preflightResult).toHaveBeenCalledWith(false);
   });
@@ -65,11 +66,11 @@ describe("AgentSessionEffect", () => {
       },
     });
 
-    const result = await Effect.runPromise(AgentSessionEffect.prompt(session, "fail").pipe(Effect.either));
+    const result = await Effect.runPromise(AgentSessionEffect.prompt(session, "fail").pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toMatchObject({
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toMatchObject({
         _tag: "AgentSessionPromptError",
         cause,
       } satisfies Partial<AgentSessionPromptError>);
@@ -90,19 +91,19 @@ describe("AgentSessionEffect", () => {
         throw promptCause;
       },
     });
-    const program = AgentSessionEffect.prompt(session, "reuse me").pipe(Effect.either);
+    const program = AgentSessionEffect.prompt(session, "reuse me").pipe(Effect.result);
 
     const first = await Effect.runPromise(program);
     const second = await Effect.runPromise(program);
 
-    expect(Either.isLeft(first)).toBe(true);
-    if (Either.isLeft(first)) {
-      expect(first.left).toBeInstanceOf(AgentSessionPromptRejectedError);
-      expect(first.left.cause).toBe(preflightCause);
+    expect(Result.isFailure(first)).toBe(true);
+    if (Result.isFailure(first)) {
+      expect(first.failure).toBeInstanceOf(AgentSessionPromptRejectedError);
+      expect(first.failure.cause).toBe(preflightCause);
     }
-    expect(Either.isLeft(second)).toBe(true);
-    if (Either.isLeft(second)) {
-      expect(second.left).toMatchObject({
+    expect(Result.isFailure(second)).toBe(true);
+    if (Result.isFailure(second)) {
+      expect(second.failure).toMatchObject({
         _tag: "AgentSessionPromptError",
         cause: promptCause,
       } satisfies Partial<AgentSessionPromptError>);
@@ -140,6 +141,74 @@ describe("AgentSessionEffect", () => {
     session.emit(second);
 
     expect(Array.from(await collected)).toEqual([first, second]);
+    expect(session.unsubscribeCount).toBe(1);
+  });
+
+  it("fails the event stream when session subscription throws", async () => {
+    const session = new FakeAgentSession();
+    const cause = new Error("subscribe failed");
+    vi.spyOn(session, "subscribe").mockImplementation(() => {
+      throw cause;
+    });
+
+    const result = await Effect.runPromise(
+      AgentSessionEffect.events(session).pipe(Stream.runCollect, Effect.result),
+    );
+
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toMatchObject({
+        _tag: "AgentSessionEventStreamError",
+        cause,
+      });
+    }
+  });
+
+  it("fails bounded event streams instead of silently dropping overflow events", async () => {
+    const first = { type: "queue_update", steering: ["a"], followUp: [] } satisfies AgentSessionEvent;
+    const second = { type: "queue_update", steering: [], followUp: ["b"] } satisfies AgentSessionEvent;
+    const session = new FakeAgentSession();
+    const collected = Effect.runPromise(
+      AgentSessionEffect.events(session, { bufferSize: 1 }).pipe(Stream.runCollect, Effect.result),
+    );
+
+    await vi.waitFor(() => expect(session.listenerCount).toBe(1));
+    session.emit(first);
+    session.emit(second);
+
+    const result = await collected;
+
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toEqual(
+        new AgentSessionEventStreamOverflowError({ bufferSize: 1 }),
+      );
+    }
+    expect(session.unsubscribeCount).toBe(1);
+  });
+
+  it("unsubscribes immediately on overflow even when downstream stalls on a buffered event", async () => {
+    const first = { type: "queue_update", steering: ["a"], followUp: [] } satisfies AgentSessionEvent;
+    const second = { type: "queue_update", steering: [], followUp: ["b"] } satisfies AgentSessionEvent;
+    const session = new FakeAgentSession();
+    const controller = new AbortController();
+    const running = Effect.runPromise(
+      AgentSessionEffect.events(session, { bufferSize: 1 }).pipe(
+        Stream.mapEffect(() => Effect.never),
+        Stream.runDrain,
+      ),
+      { signal: controller.signal },
+    ).catch(() => undefined);
+
+    await vi.waitFor(() => expect(session.listenerCount).toBe(1));
+    session.emit(first);
+    session.emit(second);
+
+    await vi.waitFor(() => expect(session.listenerCount).toBe(0));
+    expect(session.unsubscribeCount).toBe(1);
+
+    controller.abort();
+    await running;
     expect(session.unsubscribeCount).toBe(1);
   });
 });

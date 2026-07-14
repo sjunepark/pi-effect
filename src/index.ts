@@ -6,6 +6,7 @@ export type {
 } from "./session/AgentSessionEffect.js";
 export {
   AgentSessionEventStreamError,
+  AgentSessionEventStreamOverflowError,
   AgentSessionPromptError,
   AgentSessionPromptRejectedError,
   AuthStorageApiKeyNotFoundError,
@@ -24,7 +25,10 @@ export type {
 } from "./session/AgentSessionRequestStreamOptions.js";
 export type { AgentSessionPromptFailure } from "./session/AgentSessionPromptEffect.js";
 export { AgentSessionEventStream } from "./session/AgentSessionEventStream.js";
-export type { AgentSessionEventStreamOptions } from "./session/AgentSessionEventStream.js";
+export type {
+  AgentSessionEventStreamFailure,
+  AgentSessionEventStreamOptions,
+} from "./session/AgentSessionEventStream.js";
 export { AuthStorageEffect } from "./auth/AuthStorageEffect.js";
 export type {
   AuthStorageApiKeyLookupError,
