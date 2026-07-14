@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   SettingsManagerEffect,
@@ -28,12 +28,12 @@ describe("SettingsManagerEffect", () => {
       drainErrors: () => [{ scope: "global", error: cause }],
     };
 
-    const result = await Effect.runPromise(SettingsManagerEffect.flush(manager).pipe(Effect.either));
+    const result = await Effect.runPromise(SettingsManagerEffect.flush(manager).pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(SettingsManagerPersistenceError);
-      expect(result.left.cause).toEqual([{ scope: "global", error: cause }]);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(SettingsManagerPersistenceError);
+      expect(result.failure.cause).toEqual([{ scope: "global", error: cause }]);
     }
   });
 });

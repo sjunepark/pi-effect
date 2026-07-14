@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Effect, Runtime } from "effect";
+import { Cause, Effect } from "effect";
 import { runEffectAsPromise } from "../../src/effect/EffectPromiseBoundary.js";
 
 class BoundaryFailure extends Error {
@@ -24,9 +24,9 @@ class BoundaryDefect extends Error {
 
 class BoundaryInterrupted extends Error {
   readonly _tag = "BoundaryInterrupted" as const;
-  override readonly cause: Runtime.FiberFailure;
+  override readonly cause: Cause.Cause<unknown>;
 
-  constructor(cause: Runtime.FiberFailure) {
+  constructor(cause: Cause.Cause<unknown>) {
     super("boundary interrupted");
     this.cause = cause;
   }
@@ -72,7 +72,7 @@ describe("Effect Promise boundary", () => {
     } satisfies Partial<BoundaryDefect>);
   });
 
-  it("maps AbortSignal interruption at the Promise rejection boundary", async () => {
+  it("maps AbortSignal interruption from the Effect exit", async () => {
     const controller = new AbortController();
     const execution = runBoundary(Effect.never, controller.signal);
 
@@ -80,7 +80,7 @@ describe("Effect Promise boundary", () => {
 
     await expect(execution).rejects.toSatisfy((error: unknown) => {
       expect(error).toBeInstanceOf(BoundaryInterrupted);
-      expect(Runtime.isFiberFailure((error as BoundaryInterrupted).cause)).toBe(true);
+      expect(Cause.hasInterruptsOnly((error as BoundaryInterrupted).cause)).toBe(true);
       return true;
     });
   });

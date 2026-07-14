@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import { ModelRegistryEffect, ModelRegistryModelNotFoundError } from "../../src/index.js";
 
 describe("PI ModelRegistry compatibility", () => {
@@ -8,13 +8,13 @@ describe("PI ModelRegistry compatibility", () => {
     const modelRegistry = ModelRegistry.inMemory(AuthStorage.inMemory());
 
     const result = await Effect.runPromise(
-      ModelRegistryEffect.find(modelRegistry, "pi-effect-missing-provider", "missing-model").pipe(Effect.either),
+      ModelRegistryEffect.find(modelRegistry, "pi-effect-missing-provider", "missing-model").pipe(Effect.result),
     );
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(ModelRegistryModelNotFoundError);
-      expect(result.left.cause).toEqual({
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(ModelRegistryModelNotFoundError);
+      expect(result.failure.cause).toEqual({
         provider: "pi-effect-missing-provider",
         modelId: "missing-model",
       });

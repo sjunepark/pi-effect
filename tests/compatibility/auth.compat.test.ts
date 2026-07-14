@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect";
+import { Effect, Result } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   AuthStorageApiKeyNotFoundError,
@@ -66,11 +66,11 @@ describe("PI AuthStorage compatibility", () => {
 
     await expect(Effect.runPromise(AuthStorageEffect.getApiKey(authStorage, "missing"))).resolves.toBeUndefined();
 
-    const result = await Effect.runPromise(AuthStorageEffect.requireApiKey(authStorage, "missing").pipe(Effect.either));
+    const result = await Effect.runPromise(AuthStorageEffect.requireApiKey(authStorage, "missing").pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(AuthStorageApiKeyNotFoundError);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AuthStorageApiKeyNotFoundError);
     }
   });
 
@@ -79,13 +79,13 @@ describe("PI AuthStorage compatibility", () => {
     const setStorage = AuthStorage.fromStorage(new RejectWritesBackend());
 
     const setResult = await Effect.runPromise(
-      AuthStorageEffect.set(setStorage, "openai", credential).pipe(Effect.either),
+      AuthStorageEffect.set(setStorage, "openai", credential).pipe(Effect.result),
     );
 
-    expect(Either.isLeft(setResult)).toBe(true);
-    if (Either.isLeft(setResult)) {
-      expect(setResult.left).toBeInstanceOf(AuthStorageEffectError);
-      expect(setResult.left.cause).toEqual([expect.any(Error)]);
+    expect(Result.isFailure(setResult)).toBe(true);
+    if (Result.isFailure(setResult)) {
+      expect(setResult.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(setResult.failure.cause).toEqual([expect.any(Error)]);
     }
     expect(setStorage.get("openai")).toEqual(credential);
 
@@ -93,12 +93,12 @@ describe("PI AuthStorage compatibility", () => {
       new RejectWritesBackend(JSON.stringify({ openai: credential }, null, 2)),
     );
 
-    const removeResult = await Effect.runPromise(AuthStorageEffect.remove(removeStorage, "openai").pipe(Effect.either));
+    const removeResult = await Effect.runPromise(AuthStorageEffect.remove(removeStorage, "openai").pipe(Effect.result));
 
-    expect(Either.isLeft(removeResult)).toBe(true);
-    if (Either.isLeft(removeResult)) {
-      expect(removeResult.left).toBeInstanceOf(AuthStorageEffectError);
-      expect(removeResult.left.cause).toEqual([expect.any(Error)]);
+    expect(Result.isFailure(removeResult)).toBe(true);
+    if (Result.isFailure(removeResult)) {
+      expect(removeResult.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(removeResult.failure.cause).toEqual([expect.any(Error)]);
     }
     expect(removeStorage.get("openai")).toBeUndefined();
   });
@@ -109,12 +109,12 @@ describe("PI AuthStorage compatibility", () => {
     const authStorage = AuthStorage.fromStorage(backend);
     backend.rejectReloads();
 
-    const result = await Effect.runPromise(AuthStorageEffect.reload(authStorage).pipe(Effect.either));
+    const result = await Effect.runPromise(AuthStorageEffect.reload(authStorage).pipe(Effect.result));
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(AuthStorageEffectError);
-      expect(result.left.cause).toEqual([expect.any(Error)]);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(result.failure.cause).toEqual([expect.any(Error)]);
     }
     expect(authStorage.get("openai")).toEqual(credential);
   });
@@ -123,13 +123,13 @@ describe("PI AuthStorage compatibility", () => {
     const authStorage = AuthStorage.inMemory();
 
     const result = await Effect.runPromise(
-      AuthStorageEffect.login(authStorage, unknownOAuthProvider, loginCallbacks).pipe(Effect.either),
+      AuthStorageEffect.login(authStorage, unknownOAuthProvider, loginCallbacks).pipe(Effect.result),
     );
 
-    expect(Either.isLeft(result)).toBe(true);
-    if (Either.isLeft(result)) {
-      expect(result.left).toBeInstanceOf(AuthStorageEffectError);
-      expect(result.left.cause).toBeInstanceOf(Error);
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(result.failure.cause).toBeInstanceOf(Error);
     }
   });
 });

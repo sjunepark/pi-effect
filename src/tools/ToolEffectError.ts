@@ -39,7 +39,7 @@ export class ToolEffectDefectError extends Data.TaggedError("ToolEffectDefectErr
   }
 }
 
-/** Abort-signal interruption from a tool handler, with the original Effect FiberFailure preserved as cause. */
+/** Abort-signal interruption from a tool handler, with the original Effect v4 Cause preserved as cause. */
 export class ToolEffectInterruptedError extends Data.TaggedError(
   "ToolEffectInterruptedError",
 )<ToolEffectErrorData> {

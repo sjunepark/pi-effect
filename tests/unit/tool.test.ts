@@ -1,4 +1,4 @@
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect } from "effect";
 import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
 import {
@@ -103,8 +103,8 @@ describe("defineToolEffect", () => {
       expect(error).toBeInstanceOf(ToolEffectInterruptedError);
       expect(error).toMatchObject({ _tag: "ToolEffectInterruptedError" } satisfies Partial<ToolEffectInterruptedError>);
       const cause = (error as ToolEffectInterruptedError).cause;
-      expect(Runtime.isFiberFailure(cause)).toBe(true);
-      expect(Runtime.isFiberFailure(cause) && Cause.isInterruptedOnly(cause[Runtime.FiberFailureCauseId])).toBe(true);
+      expect(Cause.isCause(cause)).toBe(true);
+      expect(Cause.isCause(cause) && Cause.hasInterruptsOnly(cause)).toBe(true);
       return true;
     });
   });

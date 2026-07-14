@@ -1,5 +1,13 @@
 # AGENTS.md
 
+<!-- effect-solutions:start -->
+
+## Effect
+
+Before writing Effect code, run `effect-solutions list`, then `effect-solutions show <topic>` for the relevant guide. Do not guess Effect patterns.
+
+<!-- effect-solutions:end -->
+
 ## Setup commands
 - Install dependencies: `bun install`.
 - Use Node `>=22.19.0` and Bun; keep `bun.lock` in sync when dependencies change.

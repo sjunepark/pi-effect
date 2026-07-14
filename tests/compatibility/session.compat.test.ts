@@ -10,9 +10,15 @@ import {
   type ProviderConfig,
   type ResourceLoader,
 } from "@earendil-works/pi-coding-agent";
-import { Effect, Either, Stream } from "effect";
+import { Effect, Result, Stream } from "effect";
 import { Type } from "typebox";
-import { AgentSessionEffect, AgentSessionPromptRejectedError, createAgentSessionEffect, defineToolEffect } from "../../src/index.js";
+import {
+  AgentSessionEffect,
+  AgentSessionEventStreamOverflowError,
+  AgentSessionPromptRejectedError,
+  createAgentSessionEffect,
+  defineToolEffect,
+} from "../../src/index.js";
 
 type CreateAgentSessionOptions = NonNullable<Parameters<typeof createAgentSession>[0]>;
 type ProviderStreamSimple = NonNullable<ProviderConfig["streamSimple"]>;
@@ -134,14 +140,14 @@ describe("PI AgentSession compatibility", () => {
 
     try {
       const result = await Effect.runPromise(
-        AgentSessionEffect.prompt(session, "hello", { preflightResult }).pipe(Effect.either),
+        AgentSessionEffect.prompt(session, "hello", { preflightResult }).pipe(Effect.result),
       );
 
-      expect(Either.isLeft(result)).toBe(true);
-      if (Either.isLeft(result)) {
-        expect(result.left).toBeInstanceOf(AgentSessionPromptRejectedError);
-        expect(result.left.cause).toBeInstanceOf(Error);
-        expect((result.left.cause as Error).message).toContain("No API key found");
+      expect(Result.isFailure(result)).toBe(true);
+      if (Result.isFailure(result)) {
+        expect(result.failure).toBeInstanceOf(AgentSessionPromptRejectedError);
+        expect(result.failure.cause).toBeInstanceOf(Error);
+        expect((result.failure.cause as Error).message).toContain("No API key found");
       }
       expect(preflightResult).toHaveBeenCalledWith(false);
     } finally {
@@ -163,6 +169,44 @@ describe("PI AgentSession compatibility", () => {
         { type: "session_info_changed", name: "compat-session-one" },
         { type: "session_info_changed", name: "compat-session-two" },
       ]);
+    } finally {
+      session.dispose();
+    }
+  });
+
+  it("fails explicitly when a bounded event stream cannot retain a synchronous PI event burst", async () => {
+    const { session } = await createInMemorySession();
+
+    try {
+      const originalSubscribe = session.subscribe.bind(session);
+      let resolveSubscribed: (() => void) | undefined;
+      const subscribed = new Promise<void>((resolve) => {
+        resolveSubscribed = resolve;
+      });
+      const subscribeSpy = vi.spyOn(session, "subscribe").mockImplementation((listener) => {
+        const unsubscribe = originalSubscribe(listener);
+        resolveSubscribed?.();
+        return unsubscribe;
+      });
+      const collected = Effect.runPromise(
+        AgentSessionEffect.events(session, { bufferSize: 1 }).pipe(
+          Stream.runCollect,
+          Effect.result,
+        ),
+      );
+
+      await subscribed;
+      subscribeSpy.mockRestore();
+      session.setSessionName("compat-session-one");
+      session.setSessionName("compat-session-two");
+
+      const result = await collected;
+      expect(Result.isFailure(result)).toBe(true);
+      if (Result.isFailure(result)) {
+        expect(result.failure).toEqual(
+          new AgentSessionEventStreamOverflowError({ bufferSize: 1 }),
+        );
+      }
     } finally {
       session.dispose();
     }

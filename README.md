@@ -18,6 +18,10 @@ Prefer the `pi-effect/raw` subpath for direct PI SDK names that downstream apps 
 
 Supported PI SDK version under test: `@earendil-works/pi-coding-agent@0.78.1`.
 
+Supported Effect version under test: `effect@4.0.0-beta.98`. Effect v4 is still
+published under npm's `beta` tag, so this package pins the exact beta rather
+than accepting beta-to-beta API changes automatically.
+
 Implemented:
 
 - scoped session creation with `createAgentSessionEffect(...)`, preserving PI's `CreateAgentSessionResult`
@@ -103,6 +107,11 @@ import { AgentSessionEffect } from "pi-effect";
 const events = AgentSessionEffect.events(session).pipe(Stream.take(10));
 ```
 
+Session event streams are unbounded by default so PI lifecycle events are not
+silently lost. A numeric `bufferSize` opts into bounded memory; if that buffer
+fills, the stream fails with `AgentSessionEventStreamOverflowError` instead of
+dropping an event and leaving consumers waiting for state that already occurred.
+
 ### Tools
 
 ```ts
@@ -125,7 +134,7 @@ const echoTool = defineToolEffect(
 );
 ```
 
-Effect failures from tool handlers are rejected as `ToolEffectExecutionError`; defects are rejected as `ToolEffectDefectError`; abort-signal interruption is rejected as `ToolEffectInterruptedError` with the original Effect `FiberFailure` preserved as `cause`. PI's agent loop converts rejected tool executions into error tool-result messages.
+Effect failures from tool handlers are rejected as `ToolEffectExecutionError`; defects are rejected as `ToolEffectDefectError`; abort-signal interruption is rejected as `ToolEffectInterruptedError` with the original Effect v4 `Cause` preserved as `cause`. PI's agent loop converts rejected tool executions into error tool-result messages.
 
 ## Development
 

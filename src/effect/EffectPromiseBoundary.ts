@@ -1,40 +1,38 @@
-import { Effect, Either, Runtime } from "effect";
-import { isInterruptedFiberFailure } from "./EffectRuntimeFailure.js";
+import { Cause, Effect } from "effect";
+import { isInterruptedCause } from "./EffectRuntimeFailure.js";
 
 export interface EffectPromiseBoundaryOptions<E> {
   readonly signal?: AbortSignal | undefined;
   readonly mapError: (error: E) => unknown;
   readonly mapDefect: (defect: unknown) => unknown;
-  readonly mapInterrupted: (failure: Runtime.FiberFailure) => unknown;
+  readonly mapInterrupted: (cause: Cause.Cause<unknown>) => unknown;
 }
 
-const runPromise = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSignal | undefined) =>
-  signal === undefined ? Effect.runPromise(effect) : Effect.runPromise(effect, { signal });
+const runPromiseExit = <A, E>(effect: Effect.Effect<A, E>, signal: AbortSignal | undefined) =>
+  signal === undefined ? Effect.runPromiseExit(effect) : Effect.runPromiseExit(effect, { signal });
 
 /**
  * Run an Effect implementation behind a non-Effect Promise callback boundary.
  *
- * Effect failures and defects are mapped before leaving the Effect runtime.
- * Runtime interruption is mapped only at the Promise rejection boundary because
- * JavaScript Promises have no native interruption channel.
+ * Effect failures, defects, and interruption are classified from the v4
+ * `Exit` before leaving the Effect runtime. JavaScript Promises have no native
+ * channels for those distinctions, so each non-success exit is rejected with
+ * the adapter's corresponding boundary error.
  */
 export const runEffectAsPromise = <A, E>(
   effect: Effect.Effect<A, E>,
   options: EffectPromiseBoundaryOptions<E>,
 ): Promise<A> => {
-  const boundaryEffect = effect.pipe(
-    Effect.mapError(options.mapError),
-    Effect.catchAllDefect((defect) => Effect.fail(options.mapDefect(defect))),
-    Effect.either,
-  );
+  return runPromiseExit(effect, options.signal).then((exit) => {
+    if (exit._tag === "Success") return exit.value;
 
-  return runPromise(boundaryEffect, options.signal).then(
-    (result) => {
-      if (Either.isLeft(result)) throw result.left;
-      return result.right;
-    },
-    (cause) => {
-      throw isInterruptedFiberFailure(cause) ? options.mapInterrupted(cause) : options.mapDefect(cause);
-    },
-  );
+    const cause = exit.cause;
+    if (isInterruptedCause(cause)) throw options.mapInterrupted(cause);
+
+    const failure = cause.reasons.find(Cause.isFailReason);
+    if (failure !== undefined) throw options.mapError(failure.error);
+
+    const defect = cause.reasons.find(Cause.isDieReason);
+    throw options.mapDefect(defect?.defect ?? Cause.squash(cause));
+  });
 };

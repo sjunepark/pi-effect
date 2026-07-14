@@ -1,11 +1,11 @@
-import { Cause, Runtime } from "effect";
+import { Cause } from "effect";
 
 /**
- * True when an Effect runtime rejection represents only fiber interruption.
+ * True when an Effect v4 cause represents only fiber interruption.
  *
- * Use this at non-Effect Promise boundaries before translating Effect runtime
- * failures into package-level interruption errors. Keep wrapper-specific error
- * mapping in the owning adapter module.
+ * Effect v4 Promise runners squash causes before rejecting, so non-Effect
+ * boundaries must inspect `runPromiseExit(...)` results before translating
+ * interruption into package-level errors.
  */
-export const isInterruptedFiberFailure = (cause: unknown): cause is Runtime.FiberFailure =>
-  Runtime.isFiberFailure(cause) && Cause.isInterruptedOnly(cause[Runtime.FiberFailureCauseId]);
+export const isInterruptedCause = (cause: unknown): boolean =>
+  Cause.isCause(cause) && Cause.hasInterruptsOnly(cause);

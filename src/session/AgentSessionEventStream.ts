@@ -1,27 +1,60 @@
-import { Effect, Stream } from "effect";
+import { Cause, Effect, Queue, Stream } from "effect";
 import type { AgentSessionEvent, AgentSessionLike } from "./AgentSessionEffect.js";
-import { AgentSessionEventStreamError } from "./AgentSessionEffectError.js";
+import {
+  AgentSessionEventStreamError,
+  AgentSessionEventStreamOverflowError,
+} from "./AgentSessionEffectError.js";
 
 /** Options for the Effect Stream created from PI SDK `AgentSession.subscribe(...)`. */
 export interface AgentSessionEventStreamOptions {
   readonly bufferSize?: number | "unbounded";
 }
 
-const subscribe = (session: AgentSessionLike, emit: { single(value: AgentSessionEvent): boolean }) =>
-  Effect.acquireRelease(
+export type AgentSessionEventStreamFailure =
+  | AgentSessionEventStreamError
+  | AgentSessionEventStreamOverflowError;
+
+const subscribe = (
+  session: AgentSessionLike,
+  queue: Queue.Queue<AgentSessionEvent, AgentSessionEventStreamFailure | Cause.Done>,
+  bufferSize: number | "unbounded",
+) => {
+  let unsubscribe: (() => void) | undefined;
+  let closeRequested = false;
+  let closed = false;
+  const close = () => {
+    closeRequested = true;
+    if (unsubscribe === undefined || closed) return;
+
+    closed = true;
+    try {
+      unsubscribe();
+    } catch {
+      // Stream finalizers and overflow cleanup must not mask the stream exit.
+    }
+  };
+
+  return Effect.acquireRelease(
     Effect.try({
-      try: () => session.subscribe((event) => emit.single(event)),
+      try: () => {
+        unsubscribe = session.subscribe((event) => {
+          const accepted = Queue.offerUnsafe(queue, event);
+          if (!accepted && bufferSize !== "unbounded") {
+            Queue.failCauseUnsafe(
+              queue,
+              Cause.fail(new AgentSessionEventStreamOverflowError({ bufferSize })),
+            );
+          }
+          if (!accepted) close();
+        });
+        if (closeRequested) close();
+        return close;
+      },
       catch: (cause) => new AgentSessionEventStreamError({ cause }),
     }),
-    (unsubscribe) =>
-      Effect.sync(() => {
-        try {
-          unsubscribe();
-        } catch {
-          // Stream finalizers must not mask the original stream exit.
-        }
-      }),
-  );
+    (close) => Effect.sync(close),
+  ).pipe(Effect.catch((error) => Queue.fail(queue, error)));
+};
 
 /**
  * Convert PI SDK `AgentSession.subscribe(...)` into an Effect Stream.
@@ -33,11 +66,16 @@ const subscribe = (session: AgentSessionLike, emit: { single(value: AgentSession
 export const events = (
   session: AgentSessionLike,
   options: AgentSessionEventStreamOptions = {},
-): Stream.Stream<AgentSessionEvent, AgentSessionEventStreamError> =>
-  Stream.asyncPush<AgentSessionEvent, AgentSessionEventStreamError>(
-    (emit) => subscribe(session, emit),
-    options.bufferSize === undefined ? undefined : { bufferSize: options.bufferSize },
+): Stream.Stream<AgentSessionEvent, AgentSessionEventStreamFailure> => {
+  const bufferSize = options.bufferSize ?? "unbounded";
+
+  return Stream.callback<AgentSessionEvent, AgentSessionEventStreamFailure>(
+    (queue) => subscribe(session, queue, bufferSize),
+    bufferSize === "unbounded"
+      ? undefined
+      : { bufferSize, strategy: "dropping" },
   );
+};
 
 /** Namespace for stream-specific helpers around PI SDK `AgentSession` events. */
 export const AgentSessionEventStream = {

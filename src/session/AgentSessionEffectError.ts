@@ -75,6 +75,23 @@ export class AgentSessionEventStreamError extends Data.TaggedError(
   }
 }
 
+interface AgentSessionEventStreamOverflowErrorData extends PiSdkEffectErrorData {
+  readonly bufferSize: number;
+}
+
+/** Failure raised when a bounded session event stream cannot accept another PI event without dropping it. */
+export class AgentSessionEventStreamOverflowError extends Data.TaggedError(
+  "AgentSessionEventStreamOverflowError",
+)<AgentSessionEventStreamOverflowErrorData> {
+  constructor(options: { readonly bufferSize: number }) {
+    super({
+      message: `PI session event stream buffer of ${options.bufferSize} events overflowed`,
+      cause: { bufferSize: options.bufferSize },
+      bufferSize: options.bufferSize,
+    });
+  }
+}
+
 /** Failure raised when `ModelRegistryEffect.find(...)` cannot find the requested PI model. */
 export class ModelRegistryModelNotFoundError extends Data.TaggedError(
   "ModelRegistryModelNotFoundError",
@@ -127,6 +144,7 @@ export type PiSdkEffectError =
   | AgentSessionPromptError
   | AgentSessionPromptRejectedError
   | AgentSessionEventStreamError
+  | AgentSessionEventStreamOverflowError
   | ModelRegistryModelNotFoundError
   | AuthStorageEffectError
   | AuthStorageApiKeyNotFoundError

@@ -85,7 +85,7 @@ describeRealAgent("real PI AgentSession smoke", () => {
         Effect.scoped(
           Effect.gen(function* () {
             const { session } = yield* createAgentSessionEffect(options);
-            const eventsFiber = yield* collectUntilAgentEnd(session).pipe(Effect.fork);
+            const eventsFiber = yield* collectUntilAgentEnd(session).pipe(Effect.forkChild);
 
             yield* Effect.sleep(10);
             yield* AgentSessionEffect.prompt(
@@ -95,9 +95,9 @@ describeRealAgent("real PI AgentSession smoke", () => {
 
             const events = Array.from(
               yield* Fiber.join(eventsFiber).pipe(
-                Effect.timeoutFail({
+                Effect.timeoutOrElse({
                   duration: AGENT_END_EVENT_TIMEOUT,
-                  onTimeout: () => new Error("Timed out waiting for the real-agent agent_end event"),
+                  orElse: () => Effect.fail(new Error("Timed out waiting for the real-agent agent_end event")),
                 }),
               ),
             );

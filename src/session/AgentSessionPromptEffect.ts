@@ -24,7 +24,7 @@ const abortSession = (session: AgentSessionLike): Effect.Effect<void> =>
   Effect.tryPromise({
     try: () => session.abort(),
     catch: () => undefined,
-  }).pipe(Effect.catchAll(() => Effect.void));
+  }).pipe(Effect.catch(() => Effect.void));
 
 /**
  * Effect wrapper around PI SDK `AgentSession.prompt(...)`.
