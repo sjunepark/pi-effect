@@ -74,7 +74,7 @@ describe("PI AuthStorage compatibility", () => {
     }
   });
 
-  it("surfaces PI recorded AuthStorage persistence errors without treating writes as transactional", async () => {
+  it("surfaces PI AuthStorage persistence errors without changing failed writes in memory", async () => {
     const credential: AuthCredential = { type: "api_key", key: "sk-write" };
     const setStorage = AuthStorage.fromStorage(new RejectWritesBackend());
 
@@ -85,9 +85,10 @@ describe("PI AuthStorage compatibility", () => {
     expect(Result.isFailure(setResult)).toBe(true);
     if (Result.isFailure(setResult)) {
       expect(setResult.failure).toBeInstanceOf(AuthStorageEffectError);
-      expect(setResult.failure.cause).toEqual([expect.any(Error)]);
+      expect(setResult.failure.cause).toEqual(expect.any(Error));
     }
-    expect(setStorage.get("openai")).toEqual(credential);
+    expect(setStorage.get("openai")).toBeUndefined();
+    expect(setStorage.drainErrors()).toEqual([]);
 
     const removeStorage = AuthStorage.fromStorage(
       new RejectWritesBackend(JSON.stringify({ openai: credential }, null, 2)),
@@ -98,9 +99,10 @@ describe("PI AuthStorage compatibility", () => {
     expect(Result.isFailure(removeResult)).toBe(true);
     if (Result.isFailure(removeResult)) {
       expect(removeResult.failure).toBeInstanceOf(AuthStorageEffectError);
-      expect(removeResult.failure.cause).toEqual([expect.any(Error)]);
+      expect(removeResult.failure.cause).toEqual(expect.any(Error));
     }
-    expect(removeStorage.get("openai")).toBeUndefined();
+    expect(removeStorage.get("openai")).toEqual(credential);
+    expect(removeStorage.drainErrors()).toEqual([]);
   });
 
   it("surfaces PI recorded reload errors without adding repair policy", async () => {

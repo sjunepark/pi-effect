@@ -101,6 +101,26 @@ describe("AuthStorageEffect", () => {
     }
   });
 
+  it("drains the recorded copy of a thrown persistence error", async () => {
+    const cause = new Error("write rejected");
+    const authStorage = new FakeAuthStorage();
+    authStorage.setMock.mockImplementationOnce(() => {
+      authStorage.errors = [cause];
+      throw cause;
+    });
+
+    const result = await Effect.runPromise(
+      AuthStorageEffect.set(authStorage, "openai", { type: "api_key", key: "sk-test" }).pipe(Effect.result),
+    );
+
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(result.failure.cause).toBe(cause);
+    }
+    expect(authStorage.drainErrors()).toEqual([]);
+  });
+
   it("maps rejected PI login work to AuthStorageEffectError", async () => {
     const cause = new Error("oauth failed");
     const authStorage = new FakeAuthStorage();
@@ -115,5 +135,24 @@ describe("AuthStorageEffect", () => {
       expect(result.failure).toBeInstanceOf(AuthStorageEffectError);
       expect(result.failure.cause).toBe(cause);
     }
+  });
+
+  it("preserves queued auth errors when login rejects before recording a new error", async () => {
+    const queuedCause = new Error("earlier reload failed");
+    const loginCause = new Error("oauth failed");
+    const authStorage = new FakeAuthStorage();
+    authStorage.errors = [queuedCause];
+    authStorage.loginMock.mockRejectedValueOnce(loginCause);
+
+    const result = await Effect.runPromise(
+      AuthStorageEffect.login(authStorage, "openai-codex", loginCallbacks).pipe(Effect.result),
+    );
+
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBeInstanceOf(AuthStorageEffectError);
+      expect(result.failure.cause).toEqual([loginCause, queuedCause]);
+    }
+    expect(authStorage.drainErrors()).toEqual([]);
   });
 });
